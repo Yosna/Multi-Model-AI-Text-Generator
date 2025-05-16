@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
 def main(args: argparse.Namespace) -> None:
     """Prepare data, initialize model, and run training or generation."""
     model_name = args.model.lower()
-    text = utils.read_file("input.txt")
+    text = utils.load_full_directory("dataset", "txt")
     chars, vocab_size = utils.build_vocab(text)
     stoi, itos = utils.create_mappings(chars)
     data = utils.encode_data(text, stoi)

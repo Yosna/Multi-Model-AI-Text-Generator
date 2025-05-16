@@ -9,7 +9,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 
 ## Features
 
-- Character-level tokenization
+- Character-level tokenization across multiple input files
 - Dynamic vocabulary and index mapping
 - Modular model registry for Bigram and LSTM
 - Configurable training via `config.json`
@@ -28,10 +28,16 @@ A recurrent neural network using embedding, multi-layer LSTM, and projection bac
 
 ## Input Format
 
-Place your training data in a file called `input.txt` at the root of the project. The program will:
-- Read the entire file
-- Extract unique characters to build a vocabulary
-- Convert the full text to encoded integer sequences
+The `dataset/` directory (included in this repo) contains **100 filtered sample texts** for training, preprocessed from [Project Gutenberg](https://www.gutenberg.org).
+
+To train on more data, you can download the **full cleaned dataset (4,437 books)** [on Hugging Face](https://huggingface.co/datasets/Yosna/Project-Gutenberg-Training-Data).
+
+All files were filtered using length, markup, and English word ratio heuristics. Each `.txt` file contains a single book written in English.
+
+To train on your own data, replace or add `.txt` files to the `dataset/` folder. Every `.txt` file in the folder will be loaded and concatenated for training.
+
+Each file should contain English plain text, such as books, articles, or other character-rich sources.
+
 
 ## Configuration
 
@@ -47,6 +53,7 @@ All behavior is driven by a single `config.json` file:
       "steps": 10000,
       "interval": 100,
       "lr": 0.001,
+      "patience": 10,
       "max_new_tokens": 100,
       "max_checkpoints": 10
     }
@@ -56,9 +63,9 @@ All behavior is driven by a single `config.json` file:
       "training": true,
       "batch_size": 16,
       "block_size": 64,
-      "steps": 10000,
-      "interval": 200,
-      "lr": 0.003,
+      "steps": 50000,
+      "interval": 500,
+      "lr": 0.0015,
       "patience": 10,
       "max_new_tokens": 200,
       "max_checkpoints": 10

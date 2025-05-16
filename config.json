@@ -17,9 +17,9 @@
             "training": true,
             "batch_size": 16,
             "block_size": 64,
-            "steps": 10000,
-            "interval": 200,
-            "lr": 0.003,
+            "steps": 50000,
+            "interval": 500,
+            "lr": 0.0015,
             "patience": 10,
             "max_new_tokens": 200,
             "max_checkpoints": 10

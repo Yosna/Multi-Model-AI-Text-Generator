@@ -9,10 +9,14 @@ from typing import TypeVar
 T = TypeVar("T")
 
 
-def read_file(file_path: str) -> str:
-    """Read and return the contents of a text file."""
-    with open(file_path, "r", encoding="utf-8") as f:
-        text = f.read()
+def load_full_directory(directory: str, extension: str) -> str:
+    """Concatenate contents of all files in a directory with the given extension."""
+    text = ""
+    for file in os.listdir(directory):
+        if file.endswith(extension):
+            path = os.path.join(directory, file)
+            with open(path, "r", encoding="utf-8") as f:
+                text += f.read()
     return text
 
 
