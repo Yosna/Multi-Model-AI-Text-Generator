@@ -1,6 +1,6 @@
-# Character-Level Language Models in PyTorch
+# Text Generation Language Models in PyTorch
 
-This project implements two character-level language models using PyTorch:
+This project implements two text generation language models using PyTorch:
 
 * **Bigram model** — a simple neural network that learns character-to-character transition probabilities
 * **LSTM model** — a recurrent neural network capable of learning longer-range character sequences using memory and context
