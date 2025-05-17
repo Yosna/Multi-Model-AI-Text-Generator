@@ -2,42 +2,44 @@
 
 This project implements two character-level language models using PyTorch:
 
-- **Bigram model** — a simple neural network that learns character-to-character transition probabilities
-- **LSTM model** — a recurrent neural network capable of learning longer-range character sequences using memory and context
+* **Bigram model** — a simple neural network that learns character-to-character transition probabilities
+* **LSTM model** — a recurrent neural network capable of learning longer-range character sequences using memory and context
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, and generation from either model via CLI.
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, and generation from either model via CLI. A full suite of unit tests is included for all `utils.py` functions.
 
 ## Features
 
-- Character-level tokenization across multiple input files
-- Dynamic vocabulary and index mapping
-- Modular model registry for Bigram and LSTM
-- Configurable training via `config.json`
-- Adam optimizer with early stopping
-- Automatic checkpoint rotation and resumption
-- Multinomial sampling for randomized generation
-- CLI interface to toggle models and behavior
+* Character-level tokenization across multiple input files
+* Dynamic vocabulary and index mapping
+* Modular model registry for Bigram and LSTM
+* Configurable training via `config.json`
+* Adam optimizer with early stopping
+* Automatic checkpoint rotation and resumption
+* Multinomial sampling for randomized generation
+* CLI interface to toggle models and behavior
+* Full unit test coverage for utility functions
 
 ## Model Architectures
 
 ### Bigram Model
+
 A lightweight model that uses an embedding table to predict the next character from the current character only. Fast and simple, but limited in predictive capability.
 
 ### LSTM Model
+
 A recurrent neural network using embedding, multi-layer LSTM, and projection back to vocab size. Learns long-range dependencies across sequences for an improved generation.
 
 ## Input Format
 
 The `dataset/` directory (included in this repo) contains **100 filtered sample texts** for training, preprocessed from [Project Gutenberg](https://www.gutenberg.org).
 
-To train on more data, you can download the **full cleaned dataset (4,437 books)** [on Hugging Face](https://huggingface.co/datasets/Yosna/Project-Gutenberg-Training-Data).
+For more training data, you can download the **full cleaned dataset (4,437 books)** [on Hugging Face](https://huggingface.co/datasets/Yosna/Project-Gutenberg-Training-Data).
 
 All files were filtered using length, markup, and English word ratio heuristics. Each `.txt` file contains a single book written in English.
 
 To train on your own data, replace or add `.txt` files to the `dataset/` folder. Every `.txt` file in the folder will be loaded and concatenated for training.
 
 Each file should contain English plain text, such as books, articles, or other character-rich sources.
-
 
 ## Configuration
 
@@ -122,8 +124,8 @@ While not yet semantically accurate, the model shows proper word shapes, spacing
 
 ## Dependencies
 
-- Python 3.10+
-- PyTorch
+* Python 3.10+
+* PyTorch
 
 Install dependencies with:
 
@@ -133,10 +135,10 @@ pip install torch
 
 ## Future Improvements
 
-- Unit tests for model behavior and CLI
-- Add temperature scaling for more controllable sampling
-- Optionally add Transformer-based model for comparison
-- Loss visualization with matplotlib or TensorBoard
+* Unit tests for model behavior and CLI
+* Add temperature scaling for more controllable sampling
+* Optionally add Transformer-based model for comparison
+* Loss visualization with matplotlib or TensorBoard
 
 ## License
 

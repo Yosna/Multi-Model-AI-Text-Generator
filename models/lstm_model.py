@@ -19,7 +19,11 @@ class LSTMLanguageModel(nn.Module):
     """
 
     def __init__(
-        self, vocab_size: int, embedding_dim: int, hidden_size: int, num_layers: int
+        self,
+        vocab_size: int,
+        embedding_dim: int = 64,
+        hidden_size: int = 128,
+        num_layers: int = 2,
     ) -> None:
         """Initialize the LSTM model and its parameters."""
         super().__init__()
@@ -28,6 +32,7 @@ class LSTMLanguageModel(nn.Module):
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
+        self.cfg_path = "config.json"
 
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim

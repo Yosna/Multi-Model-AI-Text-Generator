@@ -28,7 +28,7 @@ def main(args: argparse.Namespace) -> None:
     chars, vocab_size = utils.build_vocab(text)
     stoi, itos = utils.create_mappings(chars)
     data = utils.encode_data(text, stoi)
-    config = utils.get_config(model_name)
+    config = utils.get_config("config.json", model_name)
     model = utils.get_model(ModelRegistry, model_name, vocab_size, **config["model"])
 
     run_model(model, data, stoi, itos, **config["runtime"])

@@ -12,7 +12,7 @@ T = TypeVar("T")
 def load_full_directory(directory: str, extension: str) -> str:
     """Concatenate contents of all files in a directory with the given extension."""
     text = ""
-    for file in os.listdir(directory):
+    for file in sorted(os.listdir(directory)):
         if file.endswith(extension):
             path = os.path.join(directory, file)
             with open(path, "r", encoding="utf-8") as f:
@@ -85,9 +85,9 @@ def get_metadata(path: str, key: str, default: T) -> T:
     return data
 
 
-def get_config(model_name: str) -> dict:
+def get_config(path: str, model_name: str) -> dict:
     """Load and return the configuration dictionary for the given model."""
-    with open("config.json", "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
         config = json.load(f)[model_name]
     if config is None:
         raise ValueError(f"No config found for model: {model_name}")
@@ -95,6 +95,7 @@ def get_config(model_name: str) -> dict:
 
 
 def get_model(models: T, model_name: str, vocab_size: int, **hparams) -> nn.Module:
+    """Create and return a language model based on the specified model type."""
     if model_name == "bigram":
         model = models.BigramLanguageModel(vocab_size)
     elif model_name == "lstm":
@@ -132,7 +133,7 @@ def save_checkpoint(
         "step": step,
         "val_loss": val_loss,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-        "config": get_config(model.name),
+        "config": get_config(model.cfg_path, model.name),
     }
 
     with open(model.meta_path, "w", encoding="utf-8") as f:

@@ -1,0 +1,133 @@
+import torch
+import torch.nn as nn
+import os
+import json
+from models.registry import ModelRegistry
+from utils import (
+    load_full_directory,
+    build_vocab,
+    create_mappings,
+    encode_data,
+    decode_data,
+    split_data,
+    get_batch,
+    get_metadata,
+    get_config,
+    get_model,
+    save_checkpoint,
+)
+
+
+class MockModel(nn.Module):
+    def __init__(self, base_dir):
+        super().__init__()
+        self.name = "bigram"
+        self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
+        self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
+        self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
+        self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
+        self.cfg_path = os.path.join(base_dir, "config.json")
+
+
+def build_file(tmp_path, file_name, content):
+    file = tmp_path / file_name
+    file.write_text(content)
+    return file
+
+
+def build_dir(tmp_path):
+    build_file(tmp_path, "file1.txt", "Hello,")
+    build_file(tmp_path, "file2.txt", " World!")
+    build_file(tmp_path, "file3.pdf", "PDF_CONTENT")
+    build_file(tmp_path, "file4.docx", "DOCX_CONTENT")
+
+
+def test_load_full_directory(tmp_path):
+    build_dir(tmp_path)
+    text = load_full_directory(tmp_path, "txt")
+    assert all(word in text for word in ["Hello", "World"])
+    assert text == "Hello, World!"
+    assert len(text) == len("Hello, World!")
+
+
+def test_extension_filtering(tmp_path):
+    build_dir(tmp_path)
+    text = load_full_directory(tmp_path, "txt")
+    assert "Hello, World!" in text
+    assert "PDF_CONTENT" not in text
+    assert "DOCX_CONTENT" not in text
+
+
+def test_build_vocab():
+    chars, vocab_size = build_vocab("Hello, World!")
+    assert chars == [" ", "!", ",", "H", "W", "d", "e", "l", "o", "r"]
+    assert vocab_size == 10
+
+
+def test_create_mappings():
+    stoi, itos = create_mappings(["!", "H", "e", "l", "o"])
+    assert stoi == {"!": 0, "H": 1, "e": 2, "l": 3, "o": 4}
+    assert itos == {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}
+
+
+def test_encode_data():
+    stoi = {"!": 0, "H": 1, "e": 2, "l": 3, "o": 4}
+    data = encode_data("Hello!", stoi)
+    assert data.tolist() == [1, 2, 3, 3, 4, 0]
+    assert data.dtype == torch.long
+
+
+def test_decode_data():
+    itos = {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}
+    data = torch.tensor([1, 2, 3, 3, 4, 0]).tolist()
+    decoded = decode_data(data, itos)
+    assert decoded == "Hello!"
+
+
+def test_split_data():
+    data = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    train_data, val_data = split_data(data)
+    assert train_data.tolist() == [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    assert val_data.tolist() == [10]
+
+
+def test_get_batch():
+    torch.manual_seed(42)
+    data = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    x, y = get_batch(data, batch_size=2, block_size=3)
+    assert x.tolist() == [[2, 3, 4], [3, 4, 5]]
+    assert y.tolist() == [[3, 4, 5], [4, 5, 6]]
+
+
+def test_get_metadata(tmp_path):
+    build_file(tmp_path, "metadata.json", '{"val_loss": 1.5}')
+    path = tmp_path / "metadata.json"
+    assert get_metadata(path, "val_loss", float("inf")) == 1.5
+
+
+def test_get_config(tmp_path):
+    build_file(tmp_path, "config.json", '{"bigram": {"val_loss": 1.5}}')
+    assert get_config(tmp_path / "config.json", "bigram") == {"val_loss": 1.5}
+
+
+def test_get_model():
+    bigram = get_model(ModelRegistry, "bigram", vocab_size=10)
+    lstm = get_model(ModelRegistry, "lstm", vocab_size=10)
+    assert bigram.__class__.__name__ == "BigramLanguageModel"
+    assert lstm.__class__.__name__ == "LSTMLanguageModel"
+
+
+def test_save_checkpoint(tmp_path):
+    model = MockModel(str(tmp_path))
+    build_file(tmp_path, "config.json", '{"bigram": {"test": true}}')
+    save_checkpoint(model, step=10, val_loss=1.33, max_checkpoints=5)
+
+    with open(model.meta_path, "r", encoding="utf-8") as f:
+        metadata = json.load(f)
+
+    assert os.path.exists(model.ckpt_path)
+    assert os.path.exists(model.meta_path)
+    assert "timestamp" in metadata
+    assert metadata["step"] == 10
+    assert metadata["val_loss"] == 1.33
+    assert metadata["config"] == {"test": True}
