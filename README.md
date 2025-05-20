@@ -142,4 +142,4 @@ pip install torch
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](https://github.com/Yosna/AI-Character-Level-Language-Models/blob/main/LICENSE) for details.
+This project is licensed under the MIT License. See [LICENSE](https://github.com/Yosna/Multi-Model-AI-Text-Generator/blob/main/LICENSE) for details.
