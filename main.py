@@ -5,6 +5,9 @@ import os
 import argparse
 import utils
 from models.registry import ModelRegistry
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
 def parse_args() -> argparse.Namespace:
@@ -14,8 +17,8 @@ def parse_args() -> argparse.Namespace:
         "--model",
         type=str,
         default="lstm",
-        choices=["bigram", "lstm"],
-        metavar="[bigram|lstm]",
+        choices=["bigram", "lstm", "transformer"],
+        metavar="[bigram|lstm|transformer]",
         help="Model name to use from config.json",
     )
     return parser.parse_args()
@@ -31,7 +34,22 @@ def main(args: argparse.Namespace) -> None:
     config = utils.get_config("config.json", model_name)
     model = utils.get_model(ModelRegistry, model_name, vocab_size, **config["model"])
 
-    run_model(model, data, stoi, itos, **config["runtime"])
+    validate_model(model, data, stoi, itos, **config["runtime"])
+
+
+def validate_model(
+    model: nn.Module,
+    data: torch.Tensor,
+    stoi: dict[str, int],
+    itos: dict[int, str],
+    **config: T,
+) -> None:
+    """Validate the type of model to determine the appropriate run method."""
+    if model.name == "transformer":
+        generated_text = model.run(data, itos, **config)
+        print(generated_text)
+    else:
+        run_model(model, data, stoi, itos, **config)
 
 
 def run_model(

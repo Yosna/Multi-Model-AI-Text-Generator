@@ -8,20 +8,20 @@ from utils import decode_data
 class BaseLanguageModel(nn.Module):
     """
     Base class for all language models in the project.
-    
+
     This abstract base class provides common functionality for language models:
     - Device management (CPU/GPU)
     - Checkpoint handling
     - Loss computation
     - Token generation
-    
+
     All specific language model implementations should inherit from this class.
     """
 
     def __init__(self, vocab_size: int, model_name: str) -> None:
         """
         Initialize the base language model.
-        
+
         Args:
             vocab_size: Size of the vocabulary (number of unique tokens)
             model_name: Name of the model, used for checkpoint paths
@@ -49,14 +49,14 @@ class BaseLanguageModel(nn.Module):
     ):
         """
         Compute the cross entropy loss between model predictions and targets.
-        
+
         Args:
             B: batch size, T: sequence length, C: vocabulary size
             idx: Input token indices of shape (B, T)
             logits: Model predictions of shape (B, T, C)
             targets: Target token indices of shape (B, T), optional
             loss: Pre-computed loss tensor, optional
-            
+
         Returns:
             tuple: (logits, loss) where loss is None if no targets are provided
         """
@@ -71,17 +71,17 @@ class BaseLanguageModel(nn.Module):
             loss = F.cross_entropy(logits, targets)
 
         return logits, loss
-    
+
     def new_token(self, logits: torch.Tensor) -> torch.Tensor:
         """
         Generate the next token in the sequence using the model's predictions.
-        
+
         Args:
             logits: Model predictions of shape (B, T, C) where:
                 B: batch size
                 T: sequence length
                 C: vocabulary size
-            
+
         Returns:
             torch.Tensor: Next token index of shape (B, 1)
         """
