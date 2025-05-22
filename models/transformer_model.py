@@ -1,6 +1,4 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import random
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from models.base_model import BaseLanguageModel
