@@ -7,10 +7,10 @@ from utils import decode_data
 
 class TransformerLanguageModel(BaseLanguageModel):
     """
-    A language model that integrates a pre-trained transformer (DistilGPT-2) for text generation.
+    A language model that integrates a transformer (DistilGPT2) for text generation.
 
     Architecture:
-        - Uses Hugging Face's DistilGPT-2 tokenizer and model for causal language modeling.
+        - Uses Hugging Face's tokenizer and model for causal language modeling.
         - Generates text by sampling from the model's predictions given a prompt.
         - The prompt is a random sequence of tokens from the dataset.
     """
