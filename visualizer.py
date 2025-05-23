@@ -20,15 +20,16 @@ def plot_losses(
     Options to smooth the loss curves and save the plot are configurable.
 
     Args:
-        model (nn.Module): The model instance (must have a 'name' attribute).
+        model (nn.Module): The model instance.
+            (must have a 'name' and 'plot_dir' attribute)
         losses (list[float]): Training loss values.
         val_losses (list[float]): Validation loss values.
         interval (int): Step interval for validation loss.
-        show_plot (bool): Whether to display the plot interactively.
-        smooth_loss (bool): Whether to smooth the training loss curve.
-        smooth_val_loss (bool): Whether to smooth the validation loss curve.
+        show_plot (bool): Option to display the plot interactively.
+        smooth_loss (bool): Option to smooth the training loss curve.
+        smooth_val_loss (bool): Option to smooth the validation loss curve.
         weight (float): Smoothing weight (0-1, higher is smoother).
-        save_data (bool): Whether to save the plot as an image file.
+        save_data (bool): Option to save the plot as an image file.
     """
     steps = range(len(losses))
     val_steps = [i * interval for i in range(len(val_losses))]
@@ -57,7 +58,8 @@ def smooth(values: list[float], weight: float) -> list[float]:
 
     Args:
         values (list[float]): The input values to smooth.
-        weight (float): Smoothing factor (0-1, higher means smoother).
+        weight (float): The smoothing factor.
+            (0-1, higher means smoother)
 
     Returns:
         list[float]: The smoothed values.
@@ -79,7 +81,8 @@ def save_plot(model: nn.Module, plt: plt, plot_name: str) -> None:
     Plots are timestamped for unique naming.
 
     Args:
-        model (nn.Module): The model instance (must have a 'plot_dir' and 'name' attribute).
+        model (nn.Module): The model instance.
+            (must have a 'plot_dir' and 'name' attribute)
         plt (matplotlib.pyplot): The matplotlib pyplot module.
         plot_name (str): A label for the plot (used in the filename).
     """
