@@ -5,6 +5,7 @@ import os
 import argparse
 import utils
 from models.registry import ModelRegistry
+from visualizer import plot_losses
 from typing import TypeVar
 
 T = TypeVar("T")
@@ -16,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        default="lstm",
+        default="transformer",
         choices=["bigram", "lstm", "transformer"],
         metavar="[bigram|lstm|transformer]",
         help="Model name to use from config.json",
@@ -111,14 +112,20 @@ def train(
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     train_data, val_data = utils.split_data(data)
     best_loss = utils.get_metadata(model.meta_path, "val_loss", float("inf"))
+    visualization = utils.get_config("config.json", "visualization")
+    losses = []
+    val_losses = []
     wait = 0
 
     for step in range(steps):
         xb, yb = utils.get_batch(train_data, batch_size, block_size)
+        xb = xb.to(model.device)
+        yb = yb.to(model.device)
         _, loss, *_ = model(xb, yb)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        losses.append(loss.item())
 
         overfit, best_loss, wait = validate_data(
             model,
@@ -132,10 +139,13 @@ def train(
             interval,
             patience,
             max_checkpoints,
+            val_losses,
         )
 
         if overfit:
             break
+
+    plot_losses(model, losses, val_losses, interval, **visualization)
 
 
 def validate_data(
@@ -150,6 +160,7 @@ def validate_data(
     interval: int,
     patience: int,
     max_checkpoints: int,
+    val_losses: list[float],
 ) -> tuple[bool, float, int]:
     """
     Validate model performance and handle early stopping.
@@ -159,9 +170,12 @@ def validate_data(
     overfit = False
     if step % interval == 0:
         xb, yb = utils.get_batch(data, batch_size, block_size)
+        xb = xb.to(model.device)
+        yb = yb.to(model.device)
 
         with torch.no_grad():
             _, val_loss, *_ = model(xb, yb)
+            val_losses.append(val_loss.item())
 
             print(
                 f"Step: {step:<10}"

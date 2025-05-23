@@ -28,6 +28,7 @@ class BaseLanguageModel(nn.Module):
         super().__init__()
         self.name = model_name
         self.dir_path = os.path.join("checkpoints", model_name)
+        self.plot_dir = os.path.join("plots", model_name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
@@ -35,7 +36,6 @@ class BaseLanguageModel(nn.Module):
 
         # Automatically use GPU if available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.to(self.device)
 
         self.vocab_size = vocab_size
 

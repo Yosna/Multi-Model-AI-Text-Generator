@@ -8,6 +8,21 @@ This project implements three text generation language models using PyTorch:
 
 The codebase is modular, config-driven, and supports training, checkpointing, early stopping, and generation from any model via CLI. A full suite of unit tests is included for all `utils.py` functions.
 
+## Table of Contents
+
+- [Features](#features)
+- [Model Architectures](#model-architectures)
+- [Input Format](#input-format)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Loss Visualization](#loss-visualization)
+- [GPU Acceleration](#gpu-acceleration)
+- [Example Output (LSTM)](#example-output-lstm)
+- [Dependencies](#dependencies)
+- [Testing](#testing)
+- [Future Improvements](#future-improvements)
+- [License](#license)
+
 ## Features
 
 - Character-level tokenization across multiple input files
@@ -19,6 +34,8 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Multinomial sampling for randomized generation
 - CLI interface to toggle models and behavior
 - Full unit test coverage for utility functions
+- Loss visualization with matplotlib, including smoothing and saving plots
+- GPU-accelerated training by default
 
 ## Model Architectures
 
@@ -33,6 +50,8 @@ A recurrent neural network using embedding, multi-layer LSTM, and projection bac
 ### Transformer Model
 
 Integration with a pre-built transformer model that uses self-attention mechanisms for sophisticated text generation. Currently supports text generation with configurable context length.
+
+**Note:** The Transformer model currently supports inference only. It loads a prebuilt model and generates text using self-attention mechanisms, but does not yet support training or fine-tuning.
 
 ## Input Format
 
@@ -90,11 +109,18 @@ All behavior is driven by a single `config.json` file:
       "max_new_tokens": 250
     },
     "model": {}
+  },
+  "visualization": {
+    "show_plot": true,
+    "smooth_loss": true,
+    "smooth_val_loss": true,
+    "weight": 0.9,
+    "save_data": true
   }
 }
 ```
 
-You can configure training, model size, learning rate, and checkpointing for each model independently.
+You can configure training, model size, learning rate, checkpointing, and loss visualization for each model independently.
 
 ## Usage
 
@@ -127,6 +153,17 @@ python main.py --model lstm
 
 The output will begin with a randomly selected seed character and continue for the configured number of tokens.
 
+## Loss Visualization
+
+- Plotting both training and validation loss curves
+- Optional exponential smoothing for clearer trends
+- Saving plots with timestamped filenames to a model-specific directory
+- Configurable via `config.json`
+
+## GPU Acceleration
+
+- GPU acceleration is used by default if a CUDA device is available.
+
 ## Example Output (LSTM)
 
 ```
@@ -136,29 +173,49 @@ The output will begin with a randomly selected seed character and continue for t
 a vounty presending out a glanced the busband. The lamb”
 ```
 
-While not yet semantically accurate, the model shows proper word shapes, spacing, punctuation, and primitive grammar. More training will improve realism and coherence.
+While not yet semantically coherent, the model demonstrates accurate word shapes, spacing, punctuation, and rudimentary grammar. More training will improve realism and coherence.
 
 ## Dependencies
 
 - Python 3.10+
 - PyTorch
+- matplotlib
 
 Install dependencies with:
 
 ```bash
 # To run using your CPU
-pip install torch
+pip install torch matplotlib
 
 # To run using your GPU with CUDA
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install matplotlib
 ```
+
+## Testing
+
+- The project includes a suite of unit tests for utility functions and visualization (loss plotting).
+- Tests are written using `pytest`.
+- To run all tests, use the following command from the project root:
+
+```bash
+pytest
+```
+
+- You can also run a specific test file, for example:
+
+```bash
+pytest tests/test_utils.py
+```
+
+- Test output will show which tests passed or failed
+- Coverage includes data processing, plotting, and other core utilities.
 
 ## Future Improvements
 
 - Unit tests for model behavior and CLI
 - Add temperature scaling for more controllable sampling
 - Implement training for Transformer model
-- Loss visualization with matplotlib or TensorBoard
 
 ## License
 

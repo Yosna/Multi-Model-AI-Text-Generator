@@ -37,5 +37,12 @@
       "max_new_tokens": 240
     },
     "model": {}
+  },
+  "visualization": {
+    "show_plot": true,
+    "smooth_loss": true,
+    "smooth_val_loss": true,
+    "weight": 0.9,
+    "save_data": true
   }
 }

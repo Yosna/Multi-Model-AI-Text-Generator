@@ -85,12 +85,12 @@ def get_metadata(path: str, key: str, default: T) -> T:
     return data
 
 
-def get_config(path: str, model_name: str) -> dict:
+def get_config(path: str, config_name: str) -> dict:
     """Load and return the configuration dictionary for the given model."""
     with open(path, "r", encoding="utf-8") as f:
-        config = json.load(f)[model_name]
+        config = json.load(f)[config_name]
     if config is None:
-        raise ValueError(f"No config found for model: {model_name}")
+        raise ValueError(f"No config found for: {config_name}")
     return config
 
 
@@ -104,6 +104,7 @@ def get_model(models: T, model_name: str, vocab_size: int, **hparams) -> nn.Modu
         model = models.TransformerLanguageModel(vocab_size)
     else:
         raise ValueError(f"Unknown model type: {model_name}")
+    model.to(model.device)
     return model
 
 

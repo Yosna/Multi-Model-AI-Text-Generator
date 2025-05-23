@@ -9,6 +9,10 @@ __pycache__/
 checkpoints/
 *.pt
 
+# Plots
+plots/
+*.png
+
 # VSCode/Cursor settings
 .vscode/
 
@@ -18,6 +22,9 @@ venv/
 .env/
 env/
 *.env
+
+# Pytest
+.pytest_cache/
 
 # OS-specific files
 .DS_Store
