@@ -32,7 +32,7 @@ def test_plot_losses():
     plt_val_losses = axes.lines[1]
     plt.close()
 
-    assert axes.get_title() == "Training and Validation Loss over Steps"
+    assert axes.get_title() == "Loss over Steps for mock_model.py"
     assert axes.get_ylabel() == "Loss"
     assert axes.get_xlabel() == "Steps"
     assert np.array_equal(plt_losses.get_ydata(), losses)
