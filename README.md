@@ -6,13 +6,13 @@ This project implements three text generation language models using PyTorch:
 - **LSTM model** — a recurrent neural network capable of learning longer-range character sequences using memory and context
 - **Transformer model** — integration with a pre-built transformer model for high-quality text generation
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, and generation from any model via CLI. A full suite of unit tests is included for all `utils.py` functions.
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, and generation from any model via CLI. Full unit testing is included for all `utils.py` and `visualizer.py` functions.
 
 ## Table of Contents
 
 - [Features](#features)
 - [Model Architectures](#model-architectures)
-- [Input Format](#input-format)
+- [Datasets](#datasets)
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Loss Visualization](#loss-visualization)
@@ -28,7 +28,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Character-level tokenization across multiple input files
 - Dynamic vocabulary and index mapping
 - Modular model registry for Bigram, LSTM, and Transformer
-- Configurable training via `config.json`
+- Configurable training via `config.json` (not currently implemented for Transformer)
 - Adam optimizer with early stopping
 - Automatic checkpoint rotation and resumption
 - Multinomial sampling for randomized generation
@@ -36,6 +36,8 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Full unit test coverage for utility functions
 - Loss visualization with matplotlib, including smoothing and saving plots
 - GPU-accelerated training by default
+- Integrated dataset library with pre-configured datasets
+- Support for local files, Hugging Face datasets, and built-in library datasets
 
 ## Model Architectures
 
@@ -53,17 +55,32 @@ Integration with a pre-built transformer model that uses self-attention mechanis
 
 **Note:** The Transformer model currently supports inference only. It loads a prebuilt model and generates text using self-attention mechanisms, but does not yet support training or fine-tuning.
 
-## Input Format
+## Datasets
 
-The `dataset/` directory (included in this repo) contains **100 filtered sample texts** for training, preprocessed from [Project Gutenberg](https://www.gutenberg.org).
+The project supports three types of datasets:
+
+### Local Dataset
+
+The `dataset/` directory (included in this repo) contains **100 filtered sample texts** for training, preprocessed from [Project Gutenberg](https://www.gutenberg.org). These texts have been cleaned and filtered using length, markup, and English word ratio heuristics.
 
 For more training data, you can download the **full cleaned dataset (4,437 books)** [on Hugging Face](https://huggingface.co/datasets/Yosna/Project-Gutenberg-Training-Data).
 
-All files were filtered using length, markup, and English word ratio heuristics. Each `.txt` file contains a single book written in English.
+### Built-in Library
 
-To train on your own data, replace or add `.txt` files to the `dataset/` folder. Every `.txt` file in the folder will be loaded and concatenated for training.
+The project includes a pre-configured library of datasets:
 
-Each file should contain English plain text, such as books, articles, or other character-rich sources.
+- **News** (0.03 GB) - AG News dataset
+- **Science** (0.41 GB) - PubMed QA dataset
+- **Movies** (0.49 GB) - IMDB dataset
+- **Yelp** (0.51 GB) - Yelp Review Full dataset
+- **SQuAD** (0.08 GB) - Stanford Question Answering Dataset
+- **Tiny Stories** (1.89 GB) - Tiny Stories dataset
+- **Stack Overflow** (5.75 GB) - Stack Overflow Questions dataset
+- **Wikipedia** (18.81 GB) - English Wikipedia dataset
+
+### Custom Hugging Face Datasets
+
+You can use any dataset from the Hugging Face Hub by specifying the dataset name and configuration in `config.json`. This allows for flexible experimentation with different text sources.
 
 ## Configuration
 
@@ -71,6 +88,24 @@ All behavior is driven by a single `config.json` file:
 
 ```json
 {
+  "datasets": {
+    "source": "library",
+    "locations": {
+      "local": {
+        "directory": "dataset",
+        "extension": "txt"
+      },
+      "library": {
+        "data_name": "news"
+      },
+      "huggingface": {
+        "data_name": "pubmed_qa",
+        "config_name": "pqa_artificial",
+        "split": "train",
+        "field": "context"
+      }
+    }
+  },
   "bigram": {
     "runtime": {
       "training": true,
@@ -105,8 +140,8 @@ All behavior is driven by a single `config.json` file:
   },
   "transformer": {
     "runtime": {
-      "block_size": 24,
-      "max_new_tokens": 250
+      "block_size": 32,
+      "max_new_tokens": 240
     },
     "model": {}
   },
@@ -120,7 +155,12 @@ All behavior is driven by a single `config.json` file:
 }
 ```
 
-You can configure training, model size, learning rate, checkpointing, and loss visualization for each model independently.
+You can configure:
+
+- Dataset source and location
+- Training parameters for each model
+- Model architecture parameters
+- Loss visualization settings
 
 ## Usage
 
@@ -167,10 +207,10 @@ The output will begin with a randomly selected seed character and continue for t
 ## Example Output (LSTM)
 
 ```
-“Quite pit to well find out of his seed a smarters.
+"Quite pit to well find out of his seed a smarters.
 
-‘Ha! you would
-a vounty presending out a glanced the busband. The lamb”
+'Ha! you would
+a vounty presending out a glanced the busband. The lamb"
 ```
 
 While not yet semantically coherent, the model demonstrates accurate word shapes, spacing, punctuation, and rudimentary grammar. More training will improve realism and coherence.
@@ -180,21 +220,22 @@ While not yet semantically coherent, the model demonstrates accurate word shapes
 - Python 3.10+
 - PyTorch
 - matplotlib
+- datasets (Hugging Face)
 
 Install dependencies with:
 
 ```bash
 # To run using your CPU
-pip install torch matplotlib
+pip install torch matplotlib datasets
 
 # To run using your GPU with CUDA
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-pip install matplotlib
+pip install matplotlib datasets
 ```
 
 ## Testing
 
-- The project includes a suite of unit tests for utility functions and visualization (loss plotting).
+- The project includes full unit testing for utility and loss visualization functions.
 - Tests are written using `pytest`.
 - To run all tests, use the following command from the project root:
 
@@ -215,7 +256,9 @@ pytest tests/test_utils.py
 
 - Unit tests for model behavior and CLI
 - Add temperature scaling for more controllable sampling
-- Implement training for Transformer model
+- Add automatic hyperparameter tuning
+- Implement training for transformer model
+- Implement transformer model from scratch
 
 ## License
 

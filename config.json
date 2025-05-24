@@ -1,4 +1,22 @@
 {
+  "datasets": {
+    "source": "library",
+    "locations": {
+      "local": {
+        "directory": "dataset",
+        "extension": "txt"
+      },
+      "library": {
+        "data_name": "news"
+      },
+      "huggingface": {
+        "data_name": "pubmed_qa",
+        "config_name": "pqa_artificial",
+        "split": "train",
+        "field": "context"
+      }
+    }
+  },
   "bigram": {
     "runtime": {
       "training": true,

@@ -5,6 +5,7 @@ import os
 import argparse
 import utils
 from models.registry import ModelRegistry
+from library import get_dataset
 from visualizer import plot_losses
 from typing import TypeVar
 
@@ -28,7 +29,8 @@ def parse_args() -> argparse.Namespace:
 def main(args: argparse.Namespace) -> None:
     """Prepare data, initialize model, and run training or generation."""
     model_name = args.model.lower()
-    text = utils.load_full_directory("dataset", "txt")
+    datasets = utils.get_config("config.json", "datasets")
+    text = get_dataset(datasets["source"], datasets["locations"])
     chars, vocab_size = utils.build_vocab(text)
     stoi, itos = utils.create_mappings(chars)
     data = utils.encode_data(text, stoi)
