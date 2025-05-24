@@ -12,13 +12,13 @@ DATASET_LIBRARY = {
         "data_name": "squad",
         "config_name": None,
         "split": "train",
-        "field": "context",
+        "field": "answers",
     },
     "science": {  # Dataset size: 0.41 GB
         "data_name": "pubmed_qa",
         "config_name": "pqa_artificial",
         "split": "train",
-        "field": "context",
+        "field": "long_answer",
     },
     "movies": {  # Dataset size: 0.49 GB
         "data_name": "imdb",

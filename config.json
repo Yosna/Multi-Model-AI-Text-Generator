@@ -7,13 +7,13 @@
         "extension": "txt"
       },
       "library": {
-        "data_name": "news"
+        "data_name": "science"
       },
       "huggingface": {
         "data_name": "pubmed_qa",
         "config_name": "pqa_artificial",
         "split": "train",
-        "field": "context"
+        "field": "question"
       }
     }
   },
