@@ -111,6 +111,6 @@ class LSTMLanguageModel(BaseLanguageModel):
             next_idx = self.new_token(logits)
             # Prepare input for next iteration
             idx = next_idx
-            generated.append(next_idx[0, 0].item())
+            generated.append(next_idx.item())
 
         return decode_data(generated, itos)
