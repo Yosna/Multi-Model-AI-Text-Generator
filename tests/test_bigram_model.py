@@ -12,6 +12,10 @@ def test_bigram_model_init():
     model = BigramLanguageModel(vocab_size=10)
     assert model.name == "bigram"
     assert model.vocab_size == 10
+
+
+def test_bigram_model_embedding_layer():
+    model = BigramLanguageModel(vocab_size=10)
     assert isinstance(model.embedding, nn.Embedding)
     assert model.embedding.num_embeddings == 10
     assert model.embedding.embedding_dim == 10
