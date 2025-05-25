@@ -48,7 +48,7 @@ class BaseLanguageModel(nn.Module):
         Args:
             xb (torch.Tensor): Input batch tensor.
             yb (torch.Tensor): Target batch tensor.
-            optimizer (torch.optim.Optimizer): The optimizer used for updating model parameters.
+            optimizer (torch.optim.Optimizer): Optimizer to update model parameters.
 
         Returns:
             torch.Tensor: The loss value for the current training step.
