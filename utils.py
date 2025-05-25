@@ -9,17 +9,6 @@ from typing import TypeVar
 T = TypeVar("T")
 
 
-def load_full_directory(directory: str, extension: str) -> str:
-    """Concatenate contents of all files in a directory with the given extension."""
-    text = ""
-    for file in sorted(os.listdir(directory)):
-        if file.endswith(extension):
-            path = os.path.join(directory, file)
-            with open(path, "r", encoding="utf-8") as f:
-                text += f.read()
-    return text
-
-
 def build_vocab(text: str) -> tuple[list[str], int]:
     """Build a sorted character vocabulary from text and return it with its size."""
     chars = sorted(set(text))
@@ -56,7 +45,7 @@ def split_data(data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
 
 
 def get_batch(
-    data: torch.Tensor, batch_size: int, block_size: int
+    model: nn.Module, data: torch.Tensor, batch_size: int, block_size: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Generates a batch of data for training.
@@ -72,7 +61,7 @@ def get_batch(
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([data[i : i + block_size] for i in ix])
     y = torch.stack([data[i + 1 : i + block_size + 1] for i in ix])
-    return x, y
+    return x.to(model.device), y.to(model.device)
 
 
 def get_metadata(path: str, key: str, default: T) -> T:

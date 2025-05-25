@@ -39,6 +39,26 @@ class BaseLanguageModel(nn.Module):
 
         self.vocab_size = vocab_size
 
+    def train_step(
+        self, xb: torch.Tensor, yb: torch.Tensor, optimizer: torch.optim.Optimizer
+    ) -> torch.Tensor:
+        """
+        Perform a single training step for the model.
+
+        Args:
+            xb (torch.Tensor): Input batch tensor.
+            yb (torch.Tensor): Target batch tensor.
+            optimizer (torch.optim.Optimizer): The optimizer used for updating model parameters.
+
+        Returns:
+            torch.Tensor: The loss value for the current training step.
+        """
+        _, loss, *_ = self(xb, yb)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        return loss.item()
+
     def compute_loss(
         self,
         idx: torch.Tensor,

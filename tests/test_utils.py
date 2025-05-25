@@ -4,7 +4,6 @@ import os
 import json
 from models.registry import ModelRegistry
 from utils import (
-    load_full_directory,
     build_vocab,
     create_mappings,
     encode_data,
@@ -21,41 +20,19 @@ from utils import (
 class MockModel(nn.Module):
     def __init__(self, base_dir):
         super().__init__()
-        self.name = "bigram"
+        self.name = "mock"
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
         self.cfg_path = os.path.join(base_dir, "config.json")
+        self.device = torch.device("cpu")
 
 
 def build_file(tmp_path, file_name, content):
     file = tmp_path / file_name
     file.write_text(content)
     return file
-
-
-def build_dir(tmp_path):
-    build_file(tmp_path, "file1.txt", "Hello,")
-    build_file(tmp_path, "file2.txt", " World!")
-    build_file(tmp_path, "file3.pdf", "PDF_CONTENT")
-    build_file(tmp_path, "file4.docx", "DOCX_CONTENT")
-
-
-def test_load_full_directory(tmp_path):
-    build_dir(tmp_path)
-    text = load_full_directory(tmp_path, "txt")
-    assert all(word in text for word in ["Hello", "World"])
-    assert text == "Hello, World!"
-    assert len(text) == len("Hello, World!")
-
-
-def test_extension_filtering(tmp_path):
-    build_dir(tmp_path)
-    text = load_full_directory(tmp_path, "txt")
-    assert "Hello, World!" in text
-    assert "PDF_CONTENT" not in text
-    assert "DOCX_CONTENT" not in text
 
 
 def test_build_vocab():
@@ -91,10 +68,12 @@ def test_split_data():
     assert val_data.tolist() == [10]
 
 
-def test_get_batch():
+def test_get_batch(tmp_path):
     torch.manual_seed(42)
+    model = MockModel(str(tmp_path))
     data = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    x, y = get_batch(data, batch_size=2, block_size=3)
+    x, y = get_batch(model, data, batch_size=2, block_size=3)
+    print(x, y)
     assert x.tolist() == [[2, 3, 4], [3, 4, 5]]
     assert y.tolist() == [[3, 4, 5], [4, 5, 6]]
 
@@ -119,7 +98,7 @@ def test_get_model():
 
 def test_save_checkpoint(tmp_path):
     model = MockModel(str(tmp_path))
-    build_file(tmp_path, "config.json", '{"bigram": {"test": true}}')
+    build_file(tmp_path, "config.json", '{"mock": {"test": true}}')
     save_checkpoint(model, step=10, val_loss=1.33, max_checkpoints=5)
 
     with open(model.meta_path, "r", encoding="utf-8") as f:

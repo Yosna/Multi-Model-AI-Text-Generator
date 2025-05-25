@@ -3,10 +3,16 @@ import torch.nn as nn
 import random
 import os
 import argparse
-import utils
+from utils import (
+    get_config,
+    build_vocab,
+    create_mappings,
+    encode_data,
+    get_model,
+)
 from models.registry import ModelRegistry
+from training import train
 from library import get_dataset
-from visualizer import plot_losses
 from typing import TypeVar
 
 T = TypeVar("T")
@@ -29,13 +35,13 @@ def parse_args() -> argparse.Namespace:
 def main(args: argparse.Namespace) -> None:
     """Prepare data, initialize model, and run training or generation."""
     model_name = args.model.lower()
-    datasets = utils.get_config("config.json", "datasets")
+    datasets = get_config("config.json", "datasets")
     text = get_dataset(datasets["source"], datasets["locations"])
-    chars, vocab_size = utils.build_vocab(text)
-    stoi, itos = utils.create_mappings(chars)
-    data = utils.encode_data(text, stoi)
-    config = utils.get_config("config.json", model_name)
-    model = utils.get_model(ModelRegistry, model_name, vocab_size, **config["model"])
+    chars, vocab_size = build_vocab(text)
+    stoi, itos = create_mappings(chars)
+    data = encode_data(text, stoi)
+    config = get_config("config.json", model_name)
+    model = get_model(ModelRegistry, model_name, vocab_size, **config["model"])
 
     validate_model(model, data, stoi, itos, **config["runtime"])
 
@@ -94,112 +100,6 @@ def run_model(
         start_idx = stoi[seed_char]
         generated_text = model.generate(start_idx, itos, max_new_tokens)
         print(generated_text)
-
-
-def train(
-    model: nn.Module,
-    data: torch.Tensor,
-    batch_size: int,
-    block_size: int,
-    steps: int,
-    interval: int,
-    lr: float,
-    patience: int,
-    max_checkpoints: int,
-) -> None:
-    """
-    Train the model using Adam optimization with early stopping.
-    Saves model checkpoints after validation loss improves.
-    """
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    train_data, val_data = utils.split_data(data)
-    best_loss = utils.get_metadata(model.meta_path, "val_loss", float("inf"))
-    visualization = utils.get_config("config.json", "visualization")
-    losses = []
-    val_losses = []
-    wait = 0
-
-    for step in range(steps):
-        xb, yb = utils.get_batch(train_data, batch_size, block_size)
-        xb = xb.to(model.device)
-        yb = yb.to(model.device)
-        _, loss, *_ = model(xb, yb)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        losses.append(loss.item())
-
-        overfit, best_loss, wait = validate_data(
-            model,
-            val_data,
-            batch_size,
-            block_size,
-            step,
-            loss,
-            best_loss,
-            wait,
-            interval,
-            patience,
-            max_checkpoints,
-            val_losses,
-        )
-
-        if overfit:
-            break
-
-    plot_losses(model, losses, val_losses, interval, **visualization)
-
-
-def validate_data(
-    model: nn.Module,
-    data: torch.Tensor,
-    batch_size: int,
-    block_size: int,
-    step: int,
-    loss: torch.Tensor,
-    best_loss: float,
-    wait: int,
-    interval: int,
-    patience: int,
-    max_checkpoints: int,
-    val_losses: list[float],
-) -> tuple[bool, float, int]:
-    """
-    Validate model performance and handle early stopping.
-    Saves the best model and restores it if overfitting is detected.
-    Returns overfit status, best loss, and wait count.
-    """
-    overfit = False
-    if step % interval == 0:
-        xb, yb = utils.get_batch(data, batch_size, block_size)
-        xb = xb.to(model.device)
-        yb = yb.to(model.device)
-
-        with torch.no_grad():
-            _, val_loss, *_ = model(xb, yb)
-            val_losses.append(val_loss.item())
-
-            print(
-                f"Step: {step:<10}"
-                f"loss: {loss.item():<20.10f}"
-                f"val_loss: {val_loss.item():<20.10f}"
-            )
-
-            if val_loss < best_loss:
-                # Save model if validation loss improves
-                best_loss = val_loss
-                wait = 0
-                utils.save_checkpoint(model, step, val_loss.item(), max_checkpoints)
-            else:
-                wait += 1
-                if wait >= patience:
-                    # Restore best model before stopping
-                    model.load_state_dict(torch.load(model.ckpt_path))
-                    overfit = True
-                    print(f"Stopping due to overfitting.")
-                    print(f"Step: {step}, Best Loss: {best_loss}")
-
-    return overfit, best_loss, wait
 
 
 if __name__ == "__main__":

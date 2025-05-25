@@ -11,6 +11,7 @@ class MockModel:
 
 
 def test_plot_losses():
+    plt.close("all")
     losses = [5, 4, 3, 2, 1]
     val_losses = [1, 2, 3, 4, 5]
     steps = [i for i in range(len(losses))]
