@@ -70,6 +70,6 @@ class BigramLanguageModel(BaseLanguageModel):
             # Get predictions for next step
             logits, _ = self(idx)
             next_idx = self.new_token(logits)
-            generated.append(next_idx[0, 0].item())
+            generated.append(next_idx.item())
 
         return decode_data(generated, itos)
