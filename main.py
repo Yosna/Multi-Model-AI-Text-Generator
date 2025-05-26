@@ -43,11 +43,12 @@ def main(args: argparse.Namespace) -> None:
     config = get_config("config.json", model_name)
     model = get_model(ModelRegistry, model_name, vocab_size, **config["model"])
 
-    validate_model(model, data, stoi, itos, **config["runtime"])
+    validate_model(model, text, data, stoi, itos, **config["runtime"])
 
 
 def validate_model(
     model: nn.Module,
+    text: str,
     data: torch.Tensor,
     stoi: dict[str, int],
     itos: dict[int, str],
@@ -55,7 +56,7 @@ def validate_model(
 ) -> None:
     """Validate the type of model to determine the appropriate run method."""
     if model.name == "transformer":
-        generated_text = model.run(data, itos, **config)
+        generated_text = model.run(text, **config)
         print(generated_text)
     else:
         run_model(model, data, stoi, itos, **config)

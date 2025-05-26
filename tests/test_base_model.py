@@ -5,8 +5,8 @@ from models.base_model import BaseLanguageModel as Base
 
 
 class BaseLanguageModel(Base):
-    def __init__(self, vocab_size=10, model_name="test"):
-        super().__init__(vocab_size, model_name)
+    def __init__(self, model_name="test", vocab_size=10):
+        super().__init__(model_name, vocab_size)
         self.embedding = nn.Embedding(vocab_size, vocab_size)
 
     def forward(self, idx, targets):
