@@ -26,7 +26,8 @@ class BigramLanguageModel(BaseLanguageModel):
 
     def __repr__(self) -> str:
         """Return a string representation of the model."""
-        return f"BigramLanguageModel(vocab_size={self.vocab_size})"
+        output = f"BigramLanguageModel(\n\tvocab_size={self.vocab_size}\n)"
+        return output.expandtabs(4)
 
     def forward(
         self, idx: torch.Tensor, targets: torch.Tensor | None = None

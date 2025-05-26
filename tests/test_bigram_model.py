@@ -23,7 +23,9 @@ def test_bigram_model_embedding_layer():
 
 def test_bigram_model_repr():
     model = BigramLanguageModel(vocab_size=10)
-    assert str(model) == "BigramLanguageModel(vocab_size=10)"
+    assert str(model) == (
+        f"BigramLanguageModel(\n" f"\tvocab_size={model.vocab_size}\n)"
+    ).expandtabs(4)
 
 
 def test_bigram_model_forward():

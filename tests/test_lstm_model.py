@@ -53,12 +53,13 @@ def test_lstm_model_fc_layer():
 def test_lstm_model_repr():
     model = get_lstm_model()
     assert str(model) == (
-        "LSTMLanguageModel("
-        "vocab_size=5, "
-        "embedding_dim=4, "
-        "hidden_size=8, "
-        "num_layers=1)"
-    )
+        f"LSTMLanguageModel(\n"
+        f"\tvocab_size={model.vocab_size},\n"
+        f"\tembedding_dim={model.embedding_dim},\n"
+        f"\thidden_size={model.hidden_size},\n"
+        f"\tnum_layers={model.num_layers}\n"
+        f")"
+    ).expandtabs(4)
 
 
 def test_lstm_model_forward():

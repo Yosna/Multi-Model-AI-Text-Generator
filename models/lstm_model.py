@@ -45,11 +45,15 @@ class LSTMLanguageModel(BaseLanguageModel):
 
     def __repr__(self) -> str:
         """Return a string representation of the model."""
-        return (
-            f"LSTMLanguageModel(vocab_size={self.vocab_size}, "
-            f"embedding_dim={self.embedding_dim}, hidden_size={self.hidden_size}, "
-            f"num_layers={self.num_layers})"
+        output = (
+            f"LSTMLanguageModel(\n"
+            f"\tvocab_size={self.vocab_size},\n"
+            f"\tembedding_dim={self.embedding_dim},\n"
+            f"\thidden_size={self.hidden_size},\n"
+            f"\tnum_layers={self.num_layers}\n"
+            f")"
         )
+        return output.expandtabs(4)
 
     def forward(
         self,
