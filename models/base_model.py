@@ -17,13 +17,13 @@ class BaseLanguageModel(nn.Module):
     All specific language model implementations should inherit from this class.
     """
 
-    def __init__(self, vocab_size: int, model_name: str) -> None:
+    def __init__(self, model_name: str, vocab_size: int | None = None) -> None:
         """
         Initialize the base language model.
 
         Args:
-            vocab_size: Size of the vocabulary (number of unique tokens)
             model_name: Name of the model, used for checkpoint paths
+            vocab_size: Number of unique tokens, or none for transformer models
         """
         super().__init__()
         self.name = model_name

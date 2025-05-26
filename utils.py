@@ -90,7 +90,7 @@ def get_model(models: T, model_name: str, vocab_size: int, **hparams) -> nn.Modu
     elif model_name == "lstm":
         model = models.LSTMLanguageModel(vocab_size, **hparams)
     elif model_name == "transformer":
-        model = models.TransformerLanguageModel(vocab_size)
+        model = models.TransformerLanguageModel()
     else:
         raise ValueError(f"Unknown model type: {model_name}")
     model.to(model.device)

@@ -19,7 +19,7 @@ class BigramLanguageModel(BaseLanguageModel):
 
     def __init__(self, vocab_size: int) -> None:
         """Initialize the bigram model and its parameters."""
-        super().__init__(vocab_size, model_name="bigram")
+        super().__init__(model_name="bigram", vocab_size=vocab_size)
         # Each character gets a vector of size vocab_size
         # Character predictions are learned via probability distribution
         self.embedding = nn.Embedding(vocab_size, vocab_size)

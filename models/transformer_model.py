@@ -15,9 +15,9 @@ class TransformerLanguageModel(BaseLanguageModel):
         - The prompt is a random sequence of tokens from the dataset.
     """
 
-    def __init__(self, vocab_size: int = 0) -> None:
+    def __init__(self) -> None:
         """Initialize the transformer language model and load pre-trained weights."""
-        super().__init__(vocab_size=vocab_size, model_name="transformer")
+        super().__init__(model_name="transformer")
         self.tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
         self.model = AutoModelForCausalLM.from_pretrained("distilgpt2")
 
@@ -29,7 +29,8 @@ class TransformerLanguageModel(BaseLanguageModel):
         start_idx = random.randint(0, data.size(0) - block_size)
         prompt_ids = data[start_idx : start_idx + block_size]
         prompt = decode_data(prompt_ids.tolist(), itos)
-        input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids
+        encoding = self.tokenizer(prompt, return_tensors="pt")
+        input_ids = encoding.input_ids.to(self.model.device)
         attention_mask = torch.ones_like(input_ids)
 
         # Generate new text using the transformer model
