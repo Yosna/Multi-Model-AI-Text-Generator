@@ -5,8 +5,8 @@ from models.base_model import BaseLanguageModel as Base
 
 
 class BaseLanguageModel(Base):
-    def __init__(self, model_name="test", vocab_size=10):
-        super().__init__(model_name, vocab_size)
+    def __init__(self, model_name="test", cfg_path="config.json", vocab_size=10):
+        super().__init__(model_name, cfg_path, vocab_size)
         self.embedding = nn.Embedding(vocab_size, vocab_size)
 
     def forward(self, idx, targets):
@@ -21,7 +21,7 @@ class BaseLanguageModel(Base):
         for _ in range(max_new_tokens):
             logits, _ = self(idx)
             next_idx = self.new_token(logits)
-            generated.append(next_idx[0, 0].item())
+            generated.append(next_idx.item())
         return generated
 
 

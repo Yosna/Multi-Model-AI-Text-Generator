@@ -31,6 +31,7 @@ def build_file(tmp_path, file_name, content):
 
 def test_train(tmp_path):
     test_config = """{
+            "save_model": false,
             "mock": {},
             "visualization": {
                 "show_plot": false,
@@ -60,7 +61,7 @@ def test_train(tmp_path):
 
 
 def test_validate_data(tmp_path):
-    build_file(tmp_path, "config.json", '{"mock": {}}')
+    build_file(tmp_path, "config.json", '{"save_model": true, "mock": {}}')
     overfit, best_loss, wait = validate_data(
         model=MockModel(str(tmp_path)),
         data=torch.tensor([i for i in range(100)]),

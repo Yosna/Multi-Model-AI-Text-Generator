@@ -5,6 +5,7 @@ from models.lstm_model import LSTMLanguageModel
 
 def get_lstm_model():
     return LSTMLanguageModel(
+        cfg_path="config.json",
         vocab_size=5,
         embedding_dim=4,
         hidden_size=8,

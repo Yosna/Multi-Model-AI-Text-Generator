@@ -17,7 +17,12 @@ class BaseLanguageModel(nn.Module):
     All specific language model implementations should inherit from this class.
     """
 
-    def __init__(self, model_name: str, vocab_size: int | None = None) -> None:
+    def __init__(
+        self,
+        model_name: str,
+        cfg_path: str = "config.json",
+        vocab_size: int | None = None,
+    ) -> None:
         """
         Initialize the base language model.
 
@@ -32,7 +37,7 @@ class BaseLanguageModel(nn.Module):
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
-        self.cfg_path = "config.json"
+        self.cfg_path = cfg_path
 
         # Automatically use GPU if available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

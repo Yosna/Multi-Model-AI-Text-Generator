@@ -15,9 +15,9 @@ class TransformerLanguageModel(BaseLanguageModel):
         - The prompt is a random sequence of tokens from the dataset.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, cfg_path: str) -> None:
         """Initialize the transformer language model and load pre-trained weights."""
-        super().__init__(model_name="transformer")
+        super().__init__(model_name="transformer", cfg_path=cfg_path)
         self.tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
         self.model = AutoModelForCausalLM.from_pretrained("distilgpt2")
 

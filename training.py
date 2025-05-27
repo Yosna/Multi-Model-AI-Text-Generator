@@ -87,7 +87,7 @@ def validate_data(
                 f"val_loss: {val_loss.item():<20.10f}"
             )
 
-            if val_loss < best_loss:
+            if (val_loss < best_loss) and get_config(model.cfg_path, "save_model"):
                 # Save model if validation loss improves
                 best_loss = val_loss
                 wait = 0
@@ -95,8 +95,11 @@ def validate_data(
             else:
                 wait += 1
                 if wait >= patience:
-                    # Restore best model before stopping
-                    model.load_state_dict(torch.load(model.ckpt_path))
+                    # Try to restore best model before stopping
+                    try:
+                        model.load_state_dict(torch.load(model.ckpt_path))
+                    except Exception as e:
+                        print(f"Error restoring model: {e}")
                     overfit = True
                     print(f"Stopping due to overfitting.")
                     print(f"Step: {step}, Best Loss: {best_loss}")

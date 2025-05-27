@@ -90,8 +90,8 @@ def test_get_config(tmp_path):
 
 
 def test_get_model():
-    bigram = get_model(ModelRegistry, "bigram", vocab_size=10)
-    lstm = get_model(ModelRegistry, "lstm", vocab_size=10)
+    bigram = get_model(ModelRegistry, "bigram", "config.json", vocab_size=10)
+    lstm = get_model(ModelRegistry, "lstm", "config.json", vocab_size=10)
     assert bigram.__class__.__name__ == "BigramLanguageModel"
     assert lstm.__class__.__name__ == "LSTMLanguageModel"
 

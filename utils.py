@@ -83,14 +83,16 @@ def get_config(path: str, config_name: str) -> dict:
     return config
 
 
-def get_model(models: T, model_name: str, vocab_size: int, **hparams) -> nn.Module:
+def get_model(
+    models: T, model_name: str, cfg_path: str, vocab_size: int | None = None, **hparams
+) -> nn.Module:
     """Create and return a language model based on the specified model type."""
     if model_name == "bigram":
-        model = models.BigramLanguageModel(vocab_size)
+        model = models.BigramLanguageModel(cfg_path, vocab_size)
     elif model_name == "lstm":
-        model = models.LSTMLanguageModel(vocab_size, **hparams)
+        model = models.LSTMLanguageModel(cfg_path, vocab_size, **hparams)
     elif model_name == "transformer":
-        model = models.TransformerLanguageModel()
+        model = models.TransformerLanguageModel(cfg_path)
     else:
         raise ValueError(f"Unknown model type: {model_name}")
     model.to(model.device)

@@ -106,6 +106,7 @@ All behavior is driven by a single `config.json` file:
       }
     }
   },
+  "save_model": true,
   "bigram": {
     "runtime": {
       "training": true,
@@ -235,22 +236,24 @@ pip install matplotlib datasets
 
 ## Testing
 
-- The project includes full unit testing for training, datasets, utility and loss visualization functions.
-- Tests are written using `pytest`.
-- To run all tests, use the following command from the project root:
-
-```bash
-pytest
-```
-
+- The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, and model/CLI behavior.
+- Tests are written using `pytest` and are located in the `tests/` directory.
+- To run all tests:
+  ```bash
+  pytest
+  ```
+- To check coverage:
+  ```bash
+  coverage run -m pytest
+  coverage report -m
+  ```
 - You can also run a specific test file, for example:
-
-```bash
-pytest tests/test_utils.py
-```
-
-- Test output will show which tests passed or failed
-- Coverage includes data processing, plotting, and other core utilities.
+  ```bash
+  pytest tests/test_utils.py
+  ```
+- Test output will show which tests passed or failed, and coverage will report which lines are tested.
+- Coverage includes data processing, plotting, model logic, CLI argument parsing, and more.
+- Current unit test coverage is 96% (808 stmts, 31 miss).
 
 ## Future Improvements
 

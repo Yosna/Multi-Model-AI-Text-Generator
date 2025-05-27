@@ -17,6 +17,7 @@
       }
     }
   },
+  "save_model": true,
   "bigram": {
     "runtime": {
       "training": true,

@@ -19,13 +19,14 @@ class LSTMLanguageModel(BaseLanguageModel):
 
     def __init__(
         self,
+        cfg_path: str,
         vocab_size: int,
         embedding_dim: int = 64,
         hidden_size: int = 128,
         num_layers: int = 2,
     ) -> None:
         """Initialize the LSTM model and its parameters."""
-        super().__init__(model_name="lstm", vocab_size=vocab_size)
+        super().__init__(model_name="lstm", cfg_path=cfg_path, vocab_size=vocab_size)
 
         self.embedding_dim = embedding_dim
         self.hidden_size = hidden_size
