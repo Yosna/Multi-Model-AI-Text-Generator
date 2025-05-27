@@ -6,7 +6,7 @@ This project implements three text generation language models using PyTorch:
 - **LSTM model** — a recurrent neural network capable of learning longer-range character sequences using memory and context
 - **Transformer model** — integration with a pre-built transformer model for high-quality text generation
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, and generation from any model via CLI. Full unit testing is included for `training.py`, `library.py`, `utils.py` and `visualizer.py` functions.
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, and model/CLI behavior (current coverage: 96%, 808 stmts / 31 miss).
 
 ## Table of Contents
 
@@ -257,7 +257,6 @@ pip install matplotlib datasets
 
 ## Future Improvements
 
-- Unit tests for model behavior and CLI
 - Add temperature scaling for more controllable sampling
 - Add automatic hyperparameter tuning
 - Implement training for transformer model
