@@ -234,7 +234,7 @@ pip install -r requirements.txt
 
 **Note:**  
 The `torch` package in `requirements.txt` is the CPU version of PyTorch.  
-If you want to use a GPU, **install the appropriate CUDA-enabled version of PyTorch** for your system **before** running the above command.  
+If you want to use a GPU, it is recommended to **install the appropriate CUDA-enabled version of PyTorch** for your system **before running** `pip install -r requirements.txt` for a quicker install.  
 You can find the correct install command for your system and CUDA version at the [official PyTorch installation page](https://pytorch.org/get-started/locally/).
 
 For example, to install PyTorch with CUDA 11.8 support:
