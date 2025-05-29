@@ -1,3 +1,4 @@
+from models.registry import ModelRegistry as Model
 import matplotlib.pyplot as plt
 import numpy as np
 import glob
@@ -5,19 +6,20 @@ import os
 from visualizer import plot_losses, smooth, save_plot
 
 
-class MockModel:
-    def __init__(self):
+class MockModel(Model.BaseLM):
+    def __init__(self, tmp_path):
         self.name = "mock"
+        self.plot_dir = os.path.join(tmp_path, self.name)
 
 
-def test_plot_losses():
+def test_plot_losses(tmp_path):
     plt.close("all")
-    losses = [5, 4, 3, 2, 1]
-    val_losses = [1, 2, 3, 4, 5]
+    losses = [5.0, 4.0, 3.0, 2.0, 1.0]
+    val_losses = [1.0, 2.0, 3.0, 4.0, 5.0]
     steps = [i for i in range(len(losses))]
 
     plot_losses(
-        MockModel(),
+        MockModel(tmp_path),
         losses,
         val_losses,
         interval=1,
@@ -49,8 +51,7 @@ def test_smooth():
 
 
 def test_save_plot(tmp_path):
-    model = MockModel()
-    model.plot_dir = os.path.join(tmp_path, model.name)
+    model = MockModel(tmp_path)
     file_pattern = os.path.join(model.plot_dir, "mock_test_*.png")
     plt.plot([1, 2, 3])
     save_plot(model, plt, "test")

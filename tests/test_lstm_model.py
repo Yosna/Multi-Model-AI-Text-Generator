@@ -1,10 +1,10 @@
+from models.registry import ModelRegistry as Model
 import torch
 import torch.nn as nn
-from models.lstm_model import LSTMLanguageModel
 
 
 def get_lstm_model():
-    return LSTMLanguageModel(
+    return Model.LSTMLM(
         cfg_path="config.json",
         vocab_size=5,
         embedding_dim=4,

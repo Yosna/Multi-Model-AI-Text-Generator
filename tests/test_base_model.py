@@ -1,11 +1,16 @@
+from models.registry import ModelRegistry as Model
 import torch
 import torch.nn as nn
 import os
-from models.base_model import BaseLanguageModel as Base
 
 
-class BaseLanguageModel(Base):
-    def __init__(self, model_name="test", cfg_path="config.json", vocab_size=10):
+class BaseLanguageModel(Model.BaseLM):
+    def __init__(
+        self,
+        model_name: str = "test",
+        cfg_path: str = "config.json",
+        vocab_size: int = 10,
+    ):
         super().__init__(model_name, cfg_path, vocab_size)
         self.embedding = nn.Embedding(vocab_size, vocab_size)
 
@@ -17,11 +22,11 @@ class BaseLanguageModel(Base):
     def generate(self, start_idx, max_new_tokens):
         self.eval()
         idx = torch.tensor([[start_idx]], dtype=torch.long, device=self.device)
-        generated = [start_idx]
+        generated = torch.tensor([start_idx], dtype=torch.long, device=self.device)
         for _ in range(max_new_tokens):
             logits, _ = self(idx)
             next_idx = self.new_token(logits)
-            generated.append(next_idx.item())
+            generated = torch.cat((generated, next_idx), dim=0)
         return generated
 
 
@@ -59,6 +64,7 @@ def test_base_model_compute_loss():
     targets = torch.tensor([[2, 3, 4, 5, 6]])
     logits, loss = model.compute_loss(idx, logits, targets)
     assert logits.shape == torch.Size([5, 10])
+    assert loss is not None
     assert loss > 0
 
 
@@ -68,4 +74,5 @@ def test_base_model_new_token():
     next_idx = model.new_token(logits)
     assert type(next_idx) == torch.Tensor
     assert next_idx.shape == torch.Size([1, 1])
+    assert model.vocab_size is not None
     assert next_idx.item() in range(model.vocab_size)

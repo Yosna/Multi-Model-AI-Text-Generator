@@ -1,3 +1,4 @@
+from models.registry import ModelRegistry as Model
 import torch
 import torch.nn as nn
 import os
@@ -8,9 +9,11 @@ from unittest.mock import patch
 from main import parse_args, main, validate_model, run_model
 
 
-class MockModel(nn.Module):
+class MockModel(Model.BaseLM):
     def __init__(self, base_dir, model_name, vocab_size=5):
-        super().__init__()
+        super().__init__(
+            model_name=model_name, cfg_path="config.json", vocab_size=vocab_size
+        )
         self.name = model_name
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")

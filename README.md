@@ -222,16 +222,25 @@ While not yet semantically coherent, the model demonstrates accurate word shapes
 - PyTorch
 - matplotlib
 - datasets (Hugging Face)
+- numpy
+- transformers
+- pytest (for testing)
 
-Install dependencies with:
+Install all dependencies with:
 
 ```bash
-# To run using your CPU
-pip install torch matplotlib datasets
+pip install -r requirements.txt
+```
 
-# To run using your GPU with CUDA
+**Note:**  
+The `torch` package in `requirements.txt` is the CPU version of PyTorch.  
+If you want to use a GPU, **install the appropriate CUDA-enabled version of PyTorch** for your system **before** running the above command.  
+You can find the correct install command for your system and CUDA version at the [official PyTorch installation page](https://pytorch.org/get-started/locally/).
+
+For example, to install PyTorch with CUDA 11.8 support:
+
+```bash
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-pip install matplotlib datasets
 ```
 
 ## Testing

@@ -117,3 +117,9 @@ class BaseLanguageModel(nn.Module):
         next_idx = torch.multinomial(probs, num_samples=1)
 
         return next_idx
+
+    def generate(self, *_, **__):
+        raise NotImplementedError("Method implemented in subclasses")
+
+    def run(self, *_, **__):
+        raise NotImplementedError("Method implemented in subclasses")

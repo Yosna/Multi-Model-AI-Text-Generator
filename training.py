@@ -1,11 +1,11 @@
+from models.registry import ModelRegistry as Model
 import torch
-import torch.nn as nn
 from utils import get_batch, save_checkpoint, get_metadata, split_data, get_config
 from visualizer import plot_losses
 
 
 def train(
-    model: nn.Module,
+    model: Model.BaseLM,
     data: torch.Tensor,
     batch_size: int,
     block_size: int,
@@ -14,7 +14,7 @@ def train(
     lr: float,
     patience: int,
     max_checkpoints: int,
-) -> None:
+) -> tuple[list[float], list[float]]:
     """
     Train the model using Adam optimization with early stopping.
     Saves model checkpoints after validation loss improves.
@@ -55,12 +55,12 @@ def train(
 
 
 def validate_data(
-    model: nn.Module,
+    model: Model.BaseLM,
     data: torch.Tensor,
     batch_size: int,
     block_size: int,
     step: int,
-    loss: float,
+    loss: torch.Tensor,
     best_loss: float,
     wait: int,
     interval: int,

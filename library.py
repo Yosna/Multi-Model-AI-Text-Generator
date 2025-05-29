@@ -94,11 +94,15 @@ def _load_from_huggingface(
         str: Newline-separated text from the selected field.
     """
     dataset = load_dataset(data_name, config_name, split=split)
-    if field not in dataset.column_names:
+    if isinstance(dataset, dict):
+        dataset = dataset[split]
+
+    if dataset.column_names and field not in dataset.column_names:
         raise ValueError(
             f"Field {field} not found in dataset. Fields: {dataset.column_names}"
         )
-    return "\n".join([data[field] for data in dataset])
+
+    return "\n".join([data[field] for data in dataset])  # type: ignore
 
 
 def get_dataset(source: str, locations: dict[str, dict[str, str]]) -> str:
@@ -120,7 +124,7 @@ def get_dataset(source: str, locations: dict[str, dict[str, str]]) -> str:
 
     Raises:
         ValueError: If the specified library dataset is not found in DATASET_LIBRARY.
-
+        ValueError: If the dataset source is unknown.
     """
     if source == "local":
         local = locations["local"]
@@ -132,3 +136,5 @@ def get_dataset(source: str, locations: dict[str, dict[str, str]]) -> str:
         return _load_from_huggingface(**DATASET_LIBRARY[lib["data_name"]])
     elif source == "huggingface":
         return _load_from_huggingface(**locations["huggingface"])
+    else:
+        raise ValueError(f"Unknown dataset source: {source}")

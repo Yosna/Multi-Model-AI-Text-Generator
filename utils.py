@@ -1,10 +1,10 @@
+from models.base_model import BaseLanguageModel as BaseLM
 import torch
-import torch.nn as nn
 import os
 import shutil
 import json
 import time
-from typing import TypeVar
+from typing import TypeVar, Any
 
 T = TypeVar("T")
 
@@ -32,7 +32,7 @@ def encode_data(text: str, stoi: dict[str, int]) -> torch.Tensor:
 
 def decode_data(data: torch.Tensor, itos: dict[int, str]) -> str:
     """Decode a tensor of integer indices back into a string using the mapping."""
-    decoded = "".join([itos[i] for i in data])
+    decoded = "".join([itos[i] for i in data.tolist()])
     return decoded
 
 
@@ -45,7 +45,7 @@ def split_data(data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
 
 
 def get_batch(
-    model: nn.Module, data: torch.Tensor, batch_size: int, block_size: int
+    model: BaseLM, data: torch.Tensor, batch_size: int, block_size: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Generates a batch of data for training.
@@ -59,9 +59,9 @@ def get_batch(
         y: (batch_size, block_size) - target sequences (shifted by 1)
     """
     ix = torch.randint(len(data) - block_size, (batch_size,))
-    x = torch.stack([data[i : i + block_size] for i in ix])
-    y = torch.stack([data[i + 1 : i + block_size + 1] for i in ix])
-    return x.to(model.device), y.to(model.device)
+    x = torch.stack([data[i : i + block_size] for i in ix]).to(model.device)
+    y = torch.stack([data[i + 1 : i + block_size + 1] for i in ix]).to(model.device)
+    return x, y
 
 
 def get_metadata(path: str, key: str, default: T) -> T:
@@ -74,7 +74,7 @@ def get_metadata(path: str, key: str, default: T) -> T:
     return data
 
 
-def get_config(path: str, config_name: str) -> dict:
+def get_config(path: str, config_name: str) -> dict[str, Any]:
     """Load and return the configuration dictionary for the given model."""
     with open(path, "r", encoding="utf-8") as f:
         config = json.load(f)[config_name]
@@ -84,15 +84,19 @@ def get_config(path: str, config_name: str) -> dict:
 
 
 def get_model(
-    models: T, model_name: str, cfg_path: str, vocab_size: int | None = None, **hparams
-) -> nn.Module:
+    models: type,
+    model_name: str,
+    cfg_path: str,
+    vocab_size: int,
+    **hparams: int,
+) -> BaseLM:
     """Create and return a language model based on the specified model type."""
     if model_name == "bigram":
-        model = models.BigramLanguageModel(cfg_path, vocab_size)
+        model = models.BigramLM(cfg_path, vocab_size)
     elif model_name == "lstm":
-        model = models.LSTMLanguageModel(cfg_path, vocab_size, **hparams)
+        model = models.LSTMLM(cfg_path, vocab_size, **hparams)
     elif model_name == "transformer":
-        model = models.TransformerLanguageModel(cfg_path)
+        model = models.TransformerLM(cfg_path)
     else:
         raise ValueError(f"Unknown model type: {model_name}")
     model.to(model.device)
@@ -100,7 +104,7 @@ def get_model(
 
 
 def save_checkpoint(
-    model: nn.Module, step: int, val_loss: float, max_checkpoints: int
+    model: BaseLM, step: int, val_loss: float, max_checkpoints: int
 ) -> None:
     """
     Saves a model checkpoint and rotates older checkpoints.

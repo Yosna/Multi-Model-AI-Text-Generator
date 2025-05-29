@@ -62,7 +62,9 @@ class LSTMLanguageModel(BaseLanguageModel):
         targets: torch.Tensor | None = None,
         hidden: tuple[torch.Tensor, torch.Tensor] | None = None,
     ) -> tuple[
-        torch.Tensor, torch.Tensor | None, torch.Tensor | None, torch.Tensor | None
+        torch.Tensor | None,
+        torch.Tensor | None,
+        tuple[torch.Tensor, torch.Tensor] | None,
     ]:
         """
         Compute logits and loss for input indices and targets.
@@ -107,7 +109,7 @@ class LSTMLanguageModel(BaseLanguageModel):
         """
         self.eval()
         idx = torch.tensor([[start_idx]], dtype=torch.long, device=self.device)
-        generated = [start_idx]
+        generated = torch.tensor([start_idx], dtype=torch.long, device=self.device)
         hidden = None
 
         for _ in range(max_new_tokens):
@@ -116,6 +118,6 @@ class LSTMLanguageModel(BaseLanguageModel):
             next_idx = self.new_token(logits)
             # Prepare input for next iteration
             idx = next_idx
-            generated.append(next_idx.item())
+            generated = torch.cat((generated, next_idx.flatten()), dim=0)
 
         return decode_data(generated, itos)

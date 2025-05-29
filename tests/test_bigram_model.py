@@ -3,7 +3,7 @@ import torch.nn as nn
 from models.bigram_model import BigramLanguageModel
 
 
-def get_bigram_model(cfg_path="config.json", vocab_size=10):
+def get_bigram_model(cfg_path: str = "config.json", vocab_size: int = 10):
     return BigramLanguageModel(cfg_path, vocab_size)
 
 

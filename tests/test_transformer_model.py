@@ -1,8 +1,8 @@
-from models.transformer_model import TransformerLanguageModel
+from models.registry import ModelRegistry as Model
 
 
 def get_transformer_model():
-    return TransformerLanguageModel(cfg_path="config.json")
+    return Model.TransformerLM(cfg_path="config.json")
 
 
 def test_transformer_model():

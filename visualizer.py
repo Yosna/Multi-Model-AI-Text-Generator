@@ -1,11 +1,11 @@
+from models.registry import ModelRegistry as Model
 import matplotlib.pyplot as plt
-import torch.nn as nn
 import os
 from datetime import datetime
 
 
 def plot_losses(
-    model: nn.Module,
+    model: Model.BaseLM,
     losses: list[float],
     val_losses: list[float],
     interval: int,
@@ -75,7 +75,7 @@ def smooth(values: list[float], weight: float) -> list[float]:
     return smoothed_values
 
 
-def save_plot(model: nn.Module, plt: plt, plot_name: str) -> None:
+def save_plot(model: Model.BaseLM, plt: type, plot_name: str) -> None:
     """
     Save the current matplotlib plot to the model's plot directory.
     Plots are timestamped for unique naming.

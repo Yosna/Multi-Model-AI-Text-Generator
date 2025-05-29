@@ -1,12 +1,13 @@
+from models.registry import ModelRegistry as Model
 import torch
 import torch.nn as nn
 import os
 from training import train, validate_data
 
 
-class MockModel(nn.Module):
+class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
-        super().__init__()
+        super().__init__(model_name="mock", cfg_path="config.json", vocab_size=10)
         self.name = "mock"
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
@@ -68,7 +69,7 @@ def test_validate_data(tmp_path):
         batch_size=2,
         block_size=3,
         step=1,
-        loss=0.0,
+        loss=torch.tensor(0.0),
         best_loss=float("inf"),
         wait=0,
         interval=1,

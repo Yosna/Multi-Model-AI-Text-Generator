@@ -1,5 +1,5 @@
+from models.registry import ModelRegistry as Model
 import torch
-import torch.nn as nn
 import random
 import os
 import argparse
@@ -10,12 +10,9 @@ from utils import (
     encode_data,
     get_model,
 )
-from models.registry import ModelRegistry
 from training import train
 from library import get_dataset
-from typing import TypeVar
-
-T = TypeVar("T")
+from typing import Any
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,20 +38,18 @@ def main(args: argparse.Namespace, cfg_path: str) -> None:
     stoi, itos = create_mappings(chars)
     data = encode_data(text, stoi)
     config = get_config(cfg_path, model_name)
-    model = get_model(
-        ModelRegistry, model_name, cfg_path, vocab_size, **config["model"]
-    )
+    model = get_model(Model, model_name, cfg_path, vocab_size, **config["model"])
 
     validate_model(model, text, data, stoi, itos, **config["runtime"])
 
 
 def validate_model(
-    model: nn.Module,
+    model: Model.BaseLM,
     text: str,
     data: torch.Tensor,
     stoi: dict[str, int],
     itos: dict[int, str],
-    **config: T,
+    **config: Any,
 ) -> None:
     """Validate the type of model to determine the appropriate run method."""
     if model.name == "transformer":
@@ -65,7 +60,7 @@ def validate_model(
 
 
 def run_model(
-    model: nn.Module,
+    model: Model.BaseLM,
     data: torch.Tensor,
     stoi: dict[str, int],
     itos: dict[int, str],

@@ -1,8 +1,7 @@
+from models.registry import ModelRegistry as Model
 import torch
-import torch.nn as nn
 import os
 import json
-from models.registry import ModelRegistry
 from utils import (
     build_vocab,
     create_mappings,
@@ -17,9 +16,9 @@ from utils import (
 )
 
 
-class MockModel(nn.Module):
+class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
-        super().__init__()
+        super().__init__(model_name="mock", cfg_path="config.json", vocab_size=10)
         self.name = "mock"
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
@@ -56,7 +55,7 @@ def test_encode_data():
 
 def test_decode_data():
     itos = {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}
-    data = torch.tensor([1, 2, 3, 3, 4, 0]).tolist()
+    data = torch.tensor([1, 2, 3, 3, 4, 0])
     decoded = decode_data(data, itos)
     assert decoded == "Hello!"
 
@@ -90,8 +89,8 @@ def test_get_config(tmp_path):
 
 
 def test_get_model():
-    bigram = get_model(ModelRegistry, "bigram", "config.json", vocab_size=10)
-    lstm = get_model(ModelRegistry, "lstm", "config.json", vocab_size=10)
+    bigram = get_model(Model, "bigram", "config.json", vocab_size=10)
+    lstm = get_model(Model, "lstm", "config.json", vocab_size=10)
     assert bigram.__class__.__name__ == "BigramLanguageModel"
     assert lstm.__class__.__name__ == "LSTMLanguageModel"
 

@@ -65,12 +65,12 @@ class BigramLanguageModel(BaseLanguageModel):
         """
         self.eval()
         idx = torch.tensor([[start_idx]], dtype=torch.long, device=self.device)
-        generated = [start_idx]
+        generated = torch.tensor([start_idx], dtype=torch.long, device=self.device)
 
         for _ in range(max_new_tokens):
             # Get predictions for next step
             logits, _ = self(idx)
             next_idx = self.new_token(logits)
-            generated.append(next_idx.item())
+            generated = torch.cat((generated, next_idx.flatten()), dim=0)
 
         return decode_data(generated, itos)

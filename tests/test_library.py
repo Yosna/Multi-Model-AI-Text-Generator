@@ -1,5 +1,4 @@
 from library import _load_from_local, _load_from_huggingface, get_dataset
-from datasets import load_dataset_builder
 
 
 def build_file(tmp_path, file_name, content):
