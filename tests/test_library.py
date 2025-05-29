@@ -40,7 +40,21 @@ def test_load_from_huggingface(
     assert len(text) > 0
 
 
-def test_get_dataset():
+def test_get_dataset_library():
+    datasets = {
+        "source": "library",
+        "locations": {
+            "library": {
+                "data_name": "news",
+            }
+        },
+    }
+    text = get_dataset(datasets["source"], datasets["locations"])
+    assert text is not None
+    assert len(text) > 0
+
+
+def test_get_dataset_huggingface():
     datasets = {
         "source": "huggingface",
         "locations": {
@@ -55,3 +69,45 @@ def test_get_dataset():
     text = get_dataset(datasets["source"], datasets["locations"])
     assert text is not None
     assert len(text) > 0
+
+
+def test_get_dataset_invalid_source():
+    get_dataset_ran_unsuccessfully = False
+    datasets = {
+        "source": "invalid",
+        "locations": {
+            "huggingface": {
+                "data_name": "ag_news",
+                "config_name": None,
+                "split": "train",
+                "field": "text",
+            }
+        },
+    }
+    try:
+        get_dataset(datasets["source"], datasets["locations"])
+    except ValueError as e:
+        print(e)
+        get_dataset_ran_unsuccessfully = True
+    assert get_dataset_ran_unsuccessfully
+
+
+def test_get_dataset_invalid_field():
+    get_dataset_ran_unsuccessfully = False
+    datasets = {
+        "source": "huggingface",
+        "locations": {
+            "huggingface": {
+                "data_name": "ag_news",
+                "config_name": None,
+                "split": "train",
+                "field": "invalid",
+            }
+        },
+    }
+    try:
+        get_dataset(datasets["source"], datasets["locations"])
+    except ValueError as e:
+        print(e)
+        get_dataset_ran_unsuccessfully = True
+    assert get_dataset_ran_unsuccessfully
