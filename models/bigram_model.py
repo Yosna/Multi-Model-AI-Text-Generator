@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from models.base_model import BaseLanguageModel
 from utils import decode_data
+from typing import Any
 
 
 class BigramLanguageModel(BaseLanguageModel):
@@ -17,9 +18,14 @@ class BigramLanguageModel(BaseLanguageModel):
     character when making predictions.
     """
 
-    def __init__(self, cfg_path: str, vocab_size: int) -> None:
+    def __init__(self, config: dict[str, Any], cfg_path: str, vocab_size: int) -> None:
         """Initialize the bigram model and its parameters."""
-        super().__init__(model_name="bigram", cfg_path=cfg_path, vocab_size=vocab_size)
+        super().__init__(
+            model_name="bigram",
+            config=config["runtime"],
+            cfg_path=cfg_path,
+            vocab_size=vocab_size,
+        )
         # Each character gets a vector of size vocab_size
         # Character predictions are learned via probability distribution
         self.embedding = nn.Embedding(vocab_size, vocab_size)

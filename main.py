@@ -37,10 +37,10 @@ def main(args: argparse.Namespace, cfg_path: str) -> None:
     chars, vocab_size = build_vocab(text)
     stoi, itos = create_mappings(chars)
     data = encode_data(text, stoi)
-    config = get_config(cfg_path, model_name)
-    model = get_model(Model, model_name, cfg_path, vocab_size, **config["model"])
+    config = get_config(cfg_path, "models")
+    model = get_model(Model, model_name, config, cfg_path, vocab_size)
 
-    validate_model(model, text, data, stoi, itos, **config["runtime"])
+    validate_model(model, text, data, stoi, itos)
 
 
 def validate_model(
@@ -49,14 +49,13 @@ def validate_model(
     data: torch.Tensor,
     stoi: dict[str, int],
     itos: dict[int, str],
-    **config: Any,
 ) -> None:
     """Validate the type of model to determine the appropriate run method."""
     if model.name == "transformer":
-        generated_text = model.run(text, **config)
+        generated_text = model.run(text)
         print(generated_text)
     else:
-        run_model(model, data, stoi, itos, **config)
+        run_model(model, data, stoi, itos)
 
 
 def run_model(
@@ -64,15 +63,6 @@ def run_model(
     data: torch.Tensor,
     stoi: dict[str, int],
     itos: dict[int, str],
-    training: bool,
-    batch_size: int,
-    block_size: int,
-    steps: int,
-    interval: int,
-    lr: float,
-    patience: int,
-    max_new_tokens: int,
-    max_checkpoints: int,
 ) -> None:
     """
     Run training or text generation for the model.
@@ -84,22 +74,12 @@ def run_model(
         except Exception as e:
             print(f"Error loading model: {e}")
 
-    if training:
-        train(
-            model,
-            data,
-            batch_size,
-            block_size,
-            steps,
-            interval,
-            lr,
-            patience,
-            max_checkpoints,
-        )
+    if model.training:
+        train(model, data)
     else:
         seed_char = random.choice(list(stoi.keys()))
         start_idx = stoi[seed_char]
-        generated_text = model.generate(start_idx, itos, max_new_tokens)
+        generated_text = model.generate(start_idx, itos)
         print(generated_text)
 
 

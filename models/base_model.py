@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
+from typing import Any
 
 
 class BaseLanguageModel(nn.Module):
@@ -20,6 +21,7 @@ class BaseLanguageModel(nn.Module):
     def __init__(
         self,
         model_name: str,
+        config: dict[str, Any],
         cfg_path: str = "config.json",
         vocab_size: int | None = None,
     ) -> None:
@@ -32,12 +34,21 @@ class BaseLanguageModel(nn.Module):
         """
         super().__init__()
         self.name = model_name
+        self.training = config.get("training", False)
+        self.batch_size = config.get("batch_size", 0)
+        self.block_size = config.get("block_size", 0)
+        self.steps = config.get("steps", 0)
+        self.interval = config.get("interval", 0)
+        self.lr = config.get("lr", 0)
+        self.patience = config.get("patience", 0)
+        self.max_new_tokens = config.get("max_new_tokens", 0)
+        self.max_checkpoints = config.get("max_checkpoints", 0)
+        self.cfg_path = cfg_path
         self.dir_path = os.path.join("checkpoints", model_name)
         self.plot_dir = os.path.join("plots", model_name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
-        self.cfg_path = cfg_path
 
         # Automatically use GPU if available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

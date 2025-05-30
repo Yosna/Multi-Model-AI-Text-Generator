@@ -2,16 +2,32 @@ from models.registry import ModelRegistry as Model
 import torch
 import torch.nn as nn
 import os
+from typing import Any
+
+
+def get_runtime_config():
+    return {
+        "training": True,
+        "batch_size": 2,
+        "block_size": 4,
+        "steps": 1,
+        "interval": 1,
+        "lr": 0.0015,
+        "patience": 10,
+        "max_new_tokens": 10,
+        "max_checkpoints": 1,
+    }
 
 
 class BaseLanguageModel(Model.BaseLM):
     def __init__(
         self,
         model_name: str = "test",
+        config: dict[str, Any] = get_runtime_config(),
         cfg_path: str = "config.json",
         vocab_size: int = 10,
     ):
-        super().__init__(model_name, cfg_path, vocab_size)
+        super().__init__(model_name, config, cfg_path, vocab_size)
         self.embedding = nn.Embedding(vocab_size, vocab_size)
 
     def forward(self, idx, targets):

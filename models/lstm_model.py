@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from models.base_model import BaseLanguageModel
 from utils import decode_data
+from typing import Any
 
 
 class LSTMLanguageModel(BaseLanguageModel):
@@ -19,30 +20,36 @@ class LSTMLanguageModel(BaseLanguageModel):
 
     def __init__(
         self,
+        config: dict[str, Any],
         cfg_path: str,
         vocab_size: int,
-        embedding_dim: int = 64,
-        hidden_size: int = 128,
-        num_layers: int = 2,
     ) -> None:
         """Initialize the LSTM model and its parameters."""
-        super().__init__(model_name="lstm", cfg_path=cfg_path, vocab_size=vocab_size)
+        super().__init__(
+            model_name="lstm",
+            config=config["runtime"],
+            cfg_path=cfg_path,
+            vocab_size=vocab_size,
+        )
 
-        self.embedding_dim = embedding_dim
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
+        model_cfg = config["model"]
+        self.embedding_dim = model_cfg["embedding_dim"]
+        self.hidden_size = model_cfg["hidden_size"]
+        self.num_layers = model_cfg["num_layers"]
 
         # Each character gets a vector of size embedding_dim
-        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.embedding = nn.Embedding(vocab_size, self.embedding_dim)
         # LSTM layers process the embedded sequences
         self.lstm = nn.LSTM(
-            input_size=embedding_dim,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
+            input_size=self.embedding_dim,
+            hidden_size=self.hidden_size,
+            num_layers=self.num_layers,
             batch_first=True,
         )
         # Final layer projects LSTM output back to vocabulary size
-        self.fc = nn.Linear(hidden_size, vocab_size)
+        if self.vocab_size is None:
+            raise ValueError("Vocab size is not set for LSTM model")
+        self.fc = nn.Linear(self.hidden_size, self.vocab_size)
 
     def __repr__(self) -> str:
         """Return a string representation of the model."""

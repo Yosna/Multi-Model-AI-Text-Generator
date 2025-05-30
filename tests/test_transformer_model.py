@@ -1,8 +1,18 @@
 from models.registry import ModelRegistry as Model
 
 
+def get_transformer_config():
+    return {
+        "runtime": {
+            "block_size": 4,
+            "max_new_tokens": 10,
+        },
+        "model": {},
+    }
+
+
 def get_transformer_model():
-    return Model.TransformerLM(cfg_path="config.json")
+    return Model.TransformerLM(config=get_transformer_config(), cfg_path="config.json")
 
 
 def test_transformer_model():
@@ -35,9 +45,7 @@ def test_transformer_model_model():
 def test_transformer_model_run():
     model = get_transformer_model()
     text = "Hello!"
-    block_size = 5
-    max_new_tokens = 5
-    result = model.run(text, block_size, max_new_tokens)
+    result = model.run(text)
     assert type(result) == str
-    assert len(result) >= (block_size + max_new_tokens)
-    assert result[:block_size] in text
+    assert len(result) >= model.block_size + model.max_new_tokens
+    assert result[: model.block_size] in text

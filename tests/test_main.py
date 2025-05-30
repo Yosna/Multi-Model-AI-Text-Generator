@@ -9,10 +9,39 @@ from unittest.mock import patch
 from main import parse_args, main, validate_model, run_model
 
 
+def get_models_config():
+    config = {
+        "runtime": {
+            "training": True,
+            "batch_size": 2,
+            "block_size": 4,
+            "steps": 1,
+            "interval": 1,
+            "lr": 0.0015,
+            "patience": 10,
+            "max_new_tokens": 10,
+            "max_checkpoints": 1,
+        },
+        "model": {
+            "embedding_dim": 4,
+            "hidden_size": 8,
+            "num_layers": 1,
+        },
+    }
+    return {
+        "bigram": config,
+        "lstm": config,
+        "transformer": config,
+    }
+
+
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir, model_name, vocab_size=5):
         super().__init__(
-            model_name=model_name, cfg_path="config.json", vocab_size=vocab_size
+            model_name=model_name,
+            config=get_models_config()[model_name]["runtime"],
+            cfg_path="config.json",
+            vocab_size=vocab_size,
         )
         self.name = model_name
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
@@ -50,44 +79,53 @@ def get_test_config(tmp_path):
                 },
             },
             "save_model": False,
-            "bigram": {
-                "runtime": {
-                    "training": True,
-                    "batch_size": 1,
-                    "block_size": 1,
-                    "steps": 1,
-                    "interval": 1,
-                    "lr": 1,
-                    "patience": 1,
-                    "max_new_tokens": 1,
-                    "max_checkpoints": 1,
+            "models": {
+                "bigram": {
+                    "runtime": {
+                        "training": True,
+                        "batch_size": 1,
+                        "block_size": 1,
+                        "steps": 1,
+                        "interval": 1,
+                        "lr": 1,
+                        "patience": 1,
+                        "max_new_tokens": 1,
+                        "max_checkpoints": 1,
+                    },
+                    "model": {},
                 },
-                "model": {},
-            },
-            "lstm": {
-                "runtime": {
-                    "training": True,
-                    "batch_size": 1,
-                    "block_size": 1,
-                    "steps": 1,
-                    "interval": 1,
-                    "lr": 1,
-                    "patience": 1,
-                    "max_new_tokens": 1,
-                    "max_checkpoints": 1,
+                "lstm": {
+                    "runtime": {
+                        "training": True,
+                        "batch_size": 1,
+                        "block_size": 1,
+                        "steps": 1,
+                        "interval": 1,
+                        "lr": 1,
+                        "patience": 1,
+                        "max_new_tokens": 1,
+                        "max_checkpoints": 1,
+                    },
+                    "model": {
+                        "embedding_dim": 1,
+                        "hidden_size": 1,
+                        "num_layers": 1,
+                    },
                 },
-                "model": {
-                    "embedding_dim": 1,
-                    "hidden_size": 1,
-                    "num_layers": 1,
+                "transformer": {
+                    "runtime": {
+                        "training": True,
+                        "batch_size": 1,
+                        "block_size": 1,
+                        "steps": 1,
+                        "interval": 1,
+                        "lr": 1,
+                        "patience": 1,
+                        "max_new_tokens": 1,
+                        "max_checkpoints": 1,
+                    },
+                    "model": {},
                 },
-            },
-            "transformer": {
-                "runtime": {
-                    "block_size": 1,
-                    "max_new_tokens": 1,
-                },
-                "model": {},
             },
             "visualization": {
                 "show_plot": False,
@@ -174,7 +212,6 @@ def test_validate_model(tmp_path, model):
             data=torch.tensor([i for i in range(100)]),
             stoi={"!": 0, "H": 1, "e": 2, "l": 3, "o": 4},
             itos={0: "!", 1: "H", 2: "e", 3: "l", 4: "o"},
-            **config[model]["runtime"],
         )
         validate_model_ran_successfully = True
     except Exception as e:
@@ -193,7 +230,6 @@ def test_run_model(tmp_path, model):
             data=torch.tensor([i for i in range(100)]),
             stoi={"!": 0, "H": 1, "e": 2, "l": 3, "o": 4},
             itos={0: "!", 1: "H", 2: "e", 3: "l", 4: "o"},
-            **config[model]["runtime"],
         )
         run_model_ran_successfully = True
     except Exception as e:

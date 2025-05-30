@@ -1,10 +1,32 @@
 import torch
 import torch.nn as nn
 from models.bigram_model import BigramLanguageModel
+from typing import Any
 
 
-def get_bigram_model(cfg_path: str = "config.json", vocab_size: int = 10):
-    return BigramLanguageModel(cfg_path, vocab_size)
+def get_bigram_config():
+    return {
+        "runtime": {
+            "training": True,
+            "batch_size": 2,
+            "block_size": 4,
+            "steps": 1,
+            "interval": 1,
+            "lr": 0.0015,
+            "patience": 10,
+            "max_new_tokens": 10,
+            "max_checkpoints": 1,
+        },
+        "model": {},
+    }
+
+
+def get_bigram_model(
+    config: dict[str, Any] = get_bigram_config(),
+    cfg_path: str = "config.json",
+    vocab_size: int = 10,
+):
+    return BigramLanguageModel(config, cfg_path, vocab_size)
 
 
 def test_bigram_model():

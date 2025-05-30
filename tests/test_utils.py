@@ -16,9 +16,40 @@ from utils import (
 )
 
 
+def get_models_config():
+    config = {
+        "runtime": {
+            "training": True,
+            "batch_size": 2,
+            "block_size": 4,
+            "steps": 1,
+            "interval": 1,
+            "lr": 0.0015,
+            "patience": 10,
+            "max_new_tokens": 10,
+            "max_checkpoints": 1,
+        },
+        "model": {
+            "embedding_dim": 4,
+            "hidden_size": 8,
+            "num_layers": 1,
+        },
+    }
+    return {
+        "bigram": config,
+        "lstm": config,
+        "transformer": config,
+    }
+
+
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
-        super().__init__(model_name="mock", cfg_path="config.json", vocab_size=10)
+        super().__init__(
+            model_name="mock",
+            config=get_models_config()["bigram"]["runtime"],
+            cfg_path="config.json",
+            vocab_size=10,
+        )
         self.name = "mock"
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
@@ -89,8 +120,8 @@ def test_get_config(tmp_path):
 
 
 def test_get_model():
-    bigram = get_model(Model, "bigram", "config.json", vocab_size=10)
-    lstm = get_model(Model, "lstm", "config.json", vocab_size=10)
+    bigram = get_model(Model, "bigram", get_models_config(), "config.json", 10)
+    lstm = get_model(Model, "lstm", get_models_config(), "config.json", 10)
     assert bigram.__class__.__name__ == "BigramLanguageModel"
     assert lstm.__class__.__name__ == "LSTMLanguageModel"
 

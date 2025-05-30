@@ -3,13 +3,32 @@ import torch
 import torch.nn as nn
 
 
+def get_lstm_config():
+    return {
+        "runtime": {
+            "training": True,
+            "batch_size": 2,
+            "block_size": 4,
+            "steps": 1,
+            "interval": 1,
+            "lr": 0.0015,
+            "patience": 10,
+            "max_new_tokens": 10,
+            "max_checkpoints": 1,
+        },
+        "model": {
+            "embedding_dim": 4,
+            "hidden_size": 8,
+            "num_layers": 1,
+        },
+    }
+
+
 def get_lstm_model():
     return Model.LSTMLM(
+        config=get_lstm_config(),
         cfg_path="config.json",
         vocab_size=5,
-        embedding_dim=4,
-        hidden_size=8,
-        num_layers=1,
     )
 
 
