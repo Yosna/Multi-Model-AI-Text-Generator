@@ -1,71 +1,138 @@
+"""
+Utility functions for data processing, batching, configuration, and checkpointing.
+
+Includes:
+- Vocabulary and mapping creation
+- Data encoding/decoding
+- Data splitting and batching
+- Model configuration and instantiation
+- Checkpoint saving and rotation
+"""
+
 from models.base_model import BaseLanguageModel as BaseLM
 import torch
 import os
 import shutil
 import json
 import time
-from typing import TypeVar, Any
+from typing import TypeVar, Any, cast
 
 T = TypeVar("T")
 
 
 def build_vocab(text: str) -> tuple[list[str], int]:
-    """Build a sorted character vocabulary from text and return it with its size."""
+    """
+    Build a sorted character vocabulary from text and return it with its size.
+
+    Args:
+        text (str): Input text.
+
+    Returns:
+        tuple[list[str], int]: Sorted list of unique characters and vocabulary size.
+    """
     chars = sorted(set(text))
     vocab_size = len(chars)
     return chars, vocab_size
 
 
 def create_mappings(chars: list[str]) -> tuple[dict[str, int], dict[int, str]]:
-    """Create character-to-index and index-to-character mappings."""
+    """
+    Create character-to-index and index-to-character mappings.
+
+    Args:
+        chars (list[str]): List of unique characters.
+
+    Returns:
+        tuple[dict[str, int], dict[int, str]]: stoi and itos mappings.
+    """
     stoi = {ch: i for i, ch in enumerate(chars)}
     itos = {i: ch for i, ch in enumerate(chars)}
     return stoi, itos
 
 
 def encode_data(text: str, stoi: dict[str, int]) -> torch.Tensor:
-    """Encode text into a tensor of integer indices using the provided mapping."""
+    """
+    Encode text into a tensor of integer indices using the provided mapping.
+
+    Args:
+        text (str): Input text.
+        stoi (dict[str, int]): Character-to-index mapping.
+
+    Returns:
+        torch.Tensor: Encoded tensor of indices (dtype=torch.long).
+    """
     encoded = [stoi[c] for c in text]
     data = torch.tensor(encoded, dtype=torch.long)
     return data
 
 
 def decode_data(data: torch.Tensor, itos: dict[int, str]) -> str:
-    """Decode a tensor of integer indices back into a string using the mapping."""
+    """
+    Decode a tensor of integer indices back into a string using the mapping.
+
+    Args:
+        data (torch.Tensor): Tensor of indices.
+        itos (dict[int, str]): Index-to-character mapping.
+
+    Returns:
+        str: Decoded string.
+    """
     decoded = "".join([itos[i] for i in data.tolist()])
     return decoded
 
 
 def split_data(data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-    """Split data tensor into training and validation sets (90/10 split)."""
+    """
+    Split data tensor into training and validation sets (90/10 split).
+
+    Args:
+        data (torch.Tensor): Input data tensor.
+
+    Returns:
+        tuple[torch.Tensor, torch.Tensor]: (train_data, val_data)
+    """
     split_idx = int(0.9 * len(data))
     train_data = data[:split_idx]
     val_data = data[split_idx:]
     return train_data, val_data
 
 
-def get_batch(
-    model: BaseLM, data: torch.Tensor, batch_size: int, block_size: int
-) -> tuple[torch.Tensor, torch.Tensor]:
+def get_batch(model: BaseLM, data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """
-    Generates a batch of data for training.
+    Generate a batch of data for training.
     Returns input (x) and target (y) sequences of length block_size.
     Sequences are stacked and targets are shifted by 1 position.
     Starting indices are randomized for each sequence in the batch.
 
-    Shapes:
-        data: (N,) - 1D tensor of encoded characters
-        x: (batch_size, block_size) - input sequences
-        y: (batch_size, block_size) - target sequences (shifted by 1)
+    Args:
+        model (BaseLM): Model with block_size, batch_size, and device attributes.
+        data (torch.Tensor): 1D tensor of encoded characters.
+
+    Returns:
+        tuple[torch.Tensor, torch.Tensor]:
+            x: (batch_size, block_size) - input sequences
+            y: (batch_size, block_size) - target sequences (shifted by 1)
     """
+    block_size = cast(int, model.block_size)
+    batch_size = cast(int, model.batch_size)
     ix = torch.randint(len(data) - block_size, (batch_size,))
-    x = torch.stack([data[i : i + block_size] for i in ix]).to(model.device)
-    y = torch.stack([data[i + 1 : i + block_size + 1] for i in ix]).to(model.device)
-    return x, y
+    x = torch.stack([data[i : i + block_size] for i in ix])
+    y = torch.stack([data[i + 1 : i + block_size + 1] for i in ix])
+    return x.to(model.device), y.to(model.device)
 
 
 def get_metadata(path: str, key: str, default: T) -> T:
-    """Retrieve a value from metadata.json; returns a default if not found."""
+    """
+    Retrieve a value from metadata.json; returns a default if not found.
+
+    Args:
+        path (str): Path to metadata.json.
+        key (str): Key to retrieve from the metadata.
+        default (T): Default value if key is not found.
+
+    Returns:
+        T: The value from metadata or the default.
+    """
     data = default
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
@@ -74,8 +141,34 @@ def get_metadata(path: str, key: str, default: T) -> T:
     return data
 
 
+def load_config(path: str) -> dict[str, Any]:
+    """
+    Load the entire config.json as a dict.
+
+    Args:
+        path (str): Path to config.json.
+
+    Returns:
+        dict[str, Any]: The loaded configuration dictionary.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def get_config(path: str, config_name: str) -> dict[str, Any]:
-    """Load and return the configuration dictionary for the given model."""
+    """
+    Load and return the configuration dictionary for the given model.
+
+    Args:
+        path (str): Path to config.json.
+        config_name (str): Name of the model config to retrieve.
+
+    Returns:
+        dict[str, Any]: The configuration dictionary for the model.
+
+    Raises:
+        ValueError: If no config is found for the given name.
+    """
     with open(path, "r", encoding="utf-8") as f:
         config = json.load(f)[config_name]
     if config is None:
@@ -90,7 +183,22 @@ def get_model(
     cfg_path: str,
     vocab_size: int,
 ) -> BaseLM:
-    """Create and return a language model based on the specified model type."""
+    """
+    Create and return a language model based on the specified model type.
+
+    Args:
+        models (type): Model registry with BigramLM, LSTMLM, TransformerLM, etc.
+        model_name (str): Name of the model type ("bigram", "lstm", "transformer").
+        config (dict[str, Any]): Configuration dictionary for all models.
+        cfg_path (str): Path to the config file.
+        vocab_size (int): Vocabulary size (not used for transformer).
+
+    Returns:
+        BaseLM: Instantiated language model.
+
+    Raises:
+        ValueError: If model_name is not recognized.
+    """
     if model_name == "bigram":
         model = models.BigramLM(config[model_name], cfg_path, vocab_size)
     elif model_name == "lstm":
@@ -107,8 +215,16 @@ def save_checkpoint(
     model: BaseLM, step: int, val_loss: float, max_checkpoints: int
 ) -> None:
     """
-    Saves a model checkpoint and rotates older checkpoints.
-    The oldest checkpoint is removed and the rest are shifted up by 1.
+    Save a model checkpoint and rotate older checkpoints.
+
+    The oldest checkpoint is removed and the rest are shifted up by 1. The
+    current model state and metadata are saved as checkpoint_1.
+
+    Args:
+        model (BaseLM): Model instance with dir_path, ckpt_dir, ckpt_path, meta_path.
+        step (int): Current training step.
+        val_loss (float): Validation loss at this step.
+        max_checkpoints (int): Maximum number of checkpoints to keep.
     """
     os.makedirs(model.dir_path, exist_ok=True)
 
@@ -131,7 +247,7 @@ def save_checkpoint(
         "step": step,
         "val_loss": val_loss,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-        "config": get_config(model.cfg_path, model.name),
+        "config": get_config(model.cfg_path, "models")[model.name],
     }
 
     with open(model.meta_path, "w", encoding="utf-8") as f:

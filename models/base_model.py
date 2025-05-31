@@ -15,8 +15,30 @@ class BaseLanguageModel(nn.Module):
     - Loss computation
     - Token generation
 
-    All specific language model implementations should inherit from this class.
+    Attributes:
+        name (str): Model name.
+        cfg_path (str): Path to config file.
+        vocab_size (int | None): Vocabulary size.
+        dir_path (str): Checkpoint directory.
+        plot_dir (str): Plot directory.
+        ckpt_dir (str): Current checkpoint directory.
+        ckpt_path (str): Path to checkpoint file.
+        meta_path (str): Path to metadata file.
+        device (torch.device): Device used for computation.
+        config["runtime"] keys: config.json runtime attributes
+            (type-hinted above __init__)
+
+    Notes:
+        All specific language model implementations should inherit from this class.
+        Keys in config["runtime"] are attributes set dynamically at initialization.
     """
+
+    training: bool
+    steps: int
+    interval: int
+    patience: int
+    max_new_tokens: int
+    max_checkpoints: int
 
     def __init__(
         self,
@@ -29,31 +51,33 @@ class BaseLanguageModel(nn.Module):
         Initialize the base language model.
 
         Args:
-            model_name: Name of the model, used for checkpoint paths
-            vocab_size: Number of unique tokens, or none for transformer models
+            model_name (str): Name of the model, used for checkpoint paths.
+            config (dict): Configuration dictionary for the model.
+            cfg_path (str): Path to the config file.
+            vocab_size (int | None): Number of unique tokens
+                (this is only None for transformer models)
+
+        Notes:
+            All keys in config["runtime"] are set as attributes on the model instance.
         """
         super().__init__()
-        self.name = model_name
-        self.training = config.get("training", False)
-        self.batch_size = config.get("batch_size", 0)
-        self.block_size = config.get("block_size", 0)
-        self.steps = config.get("steps", 0)
-        self.interval = config.get("interval", 0)
-        self.lr = config.get("lr", 0)
-        self.patience = config.get("patience", 0)
-        self.max_new_tokens = config.get("max_new_tokens", 0)
-        self.max_checkpoints = config.get("max_checkpoints", 0)
-        self.cfg_path = cfg_path
-        self.dir_path = os.path.join("checkpoints", model_name)
-        self.plot_dir = os.path.join("plots", model_name)
-        self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
-        self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
-        self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
+        self.name: str = model_name
+        self.cfg_path: str = cfg_path
+        self.vocab_size: int | None = vocab_size
+        self.dir_path: str = os.path.join("checkpoints", model_name)
+        self.plot_dir: str = os.path.join("plots", model_name)
+        self.ckpt_dir: str = os.path.join(self.dir_path, "checkpoint_1")
+        self.ckpt_path: str = os.path.join(self.ckpt_dir, "checkpoint.pt")
+        self.meta_path: str = os.path.join(self.ckpt_dir, "metadata.json")
 
-        # Automatically use GPU if available
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Set all runtime config keys as attributes
+        for key, value in config.get("runtime", {}).items():
+            setattr(self, key, value)
 
-        self.vocab_size = vocab_size
+        # Automatically use GPU if available, otherwise CPU
+        self.device: torch.device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
 
     def train_step(
         self, xb: torch.Tensor, yb: torch.Tensor, optimizer: torch.optim.Optimizer
@@ -86,11 +110,10 @@ class BaseLanguageModel(nn.Module):
         Compute the cross entropy loss between model predictions and targets.
 
         Args:
-            B: batch size, T: sequence length, C: vocabulary size
-            idx: Input token indices of shape (B, T)
-            logits: Model predictions of shape (B, T, C)
-            targets: Target token indices of shape (B, T), optional
-            loss: Pre-computed loss tensor, optional
+            idx (torch.Tensor): Input token indices of shape (B, T)
+            logits (torch.Tensor): Model predictions of shape (B, T, C)
+            targets (torch.Tensor, optional): Target token indices of shape (B, T)
+            loss (torch.Tensor, optional): Pre-computed loss tensor
 
         Returns:
             tuple: (logits, loss) where loss is None if no targets are provided
@@ -112,10 +135,10 @@ class BaseLanguageModel(nn.Module):
         Generate the next token in the sequence using the model's predictions.
 
         Args:
-            logits: Model predictions of shape (B, T, C) where:
-                B: batch size
-                T: sequence length
-                C: vocabulary size
+            logits (torch.Tensor): Model predictions of shape (B, T, C)
+                - B: batch size
+                - T: sequence length
+                - C: vocabulary size
 
         Returns:
             torch.Tensor: Next token index of shape (B, 1)
@@ -130,7 +153,15 @@ class BaseLanguageModel(nn.Module):
         return next_idx
 
     def generate(self, *_, **__):
+        """
+        Generate text from the model.
+        This method must be implemented by subclasses.
+        """
         raise NotImplementedError("Method implemented in subclasses")
 
     def run(self, *_, **__):
+        """
+        Run the model on input data.
+        This method must be implemented by subclasses.
+        """
         raise NotImplementedError("Method implemented in subclasses")

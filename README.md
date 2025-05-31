@@ -4,9 +4,9 @@ This project implements three text generation language models using PyTorch:
 
 - **Bigram model** — a simple neural network that learns character-to-character transition probabilities
 - **LSTM model** — a recurrent neural network capable of learning longer-range character sequences using memory and context
-- **Transformer model** — integration with a pre-built transformer model for high-quality text generation
+- **Transformer model** — inference-only; uses a pre-built transformer for high-quality text generation (training not yet supported)
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, and model/CLI behavior (current coverage: 96%, 357 stmts / 15 miss).
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (current coverage: 96%, 427 stmts / 19 miss).
 
 ## Table of Contents
 
@@ -14,6 +14,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - [Model Architectures](#model-architectures)
 - [Datasets](#datasets)
 - [Configuration](#configuration)
+- [Hyperparameter Tuning](#hyperparameter-tuning)
 - [Usage](#usage)
 - [Loss Visualization](#loss-visualization)
 - [GPU Acceleration](#gpu-acceleration)
@@ -27,13 +28,14 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 
 - Character-level tokenization across multiple input files
 - Dynamic vocabulary and index mapping
-- Modular model registry for Bigram, LSTM, and Transformer
-- Configurable training via `config.json` (not currently implemented for Transformer)
+- Modular model registry for Bigram, LSTM, and Transformer (inference-only)
+- Configurable training and hyperparameter tuning via `config.json`
+- Automatic hyperparameter tuning with Optuna
 - Adam optimizer with early stopping
 - Automatic checkpoint rotation and resumption
 - Multinomial sampling for randomized generation
 - CLI interface to toggle models and behavior
-- Full unit test coverage for utility functions
+- Full unit test coverage (96%) for all major modules, including tuning and visualization
 - Loss visualization with matplotlib, including smoothing and saving plots
 - GPU-accelerated training by default
 - Integrated dataset library with pre-configured datasets
@@ -47,13 +49,11 @@ A lightweight model that uses an embedding table to predict the next character f
 
 ### LSTM Model
 
-A recurrent neural network using embedding, multi-layer LSTM, and projection back to vocab size. Learns long-range dependencies across sequences for an improved generation.
+A recurrent neural network using embedding, multi-layer LSTM, and projection back to vocab size. Learns long-range dependencies across sequences for improved generation.
 
 ### Transformer Model
 
-Integration with a pre-built transformer model that uses self-attention mechanisms for sophisticated text generation. Currently supports text generation with configurable context length.
-
-**Note:** The Transformer model currently supports inference only. It loads a prebuilt model and generates text using self-attention mechanisms, but does not yet support training or fine-tuning.
+Integration with a pre-built transformer model that uses self-attention mechanisms for sophisticated text generation. **Currently supports inference only** (cannot be trained or fine-tuned yet).
 
 ## Datasets
 
@@ -84,7 +84,8 @@ You can use any dataset from the Hugging Face Hub by specifying the dataset name
 
 ## Configuration
 
-All behavior is driven by a single `config.json` file:
+All behavior is driven by a single `config.json` file.
+Example:
 
 ```json
 {
@@ -107,44 +108,86 @@ All behavior is driven by a single `config.json` file:
     }
   },
   "save_model": true,
-  "bigram": {
-    "runtime": {
-      "training": true,
-      "batch_size": 8,
-      "block_size": 4,
-      "steps": 10000,
-      "interval": 100,
-      "lr": 0.001,
-      "patience": 10,
-      "max_new_tokens": 100,
-      "max_checkpoints": 10
+  "models": {
+    "bigram": {
+      "runtime": {
+        "training": true,
+        "steps": 10000,
+        "interval": 100,
+        "patience": 10,
+        "max_new_tokens": 100,
+        "max_checkpoints": 10
+      },
+      "hparams": {
+        "batch_size": 16,
+        "block_size": 32,
+        "lr": 0.001
+      }
     },
-    "model": {}
-  },
-  "lstm": {
-    "runtime": {
-      "training": true,
-      "batch_size": 16,
-      "block_size": 64,
-      "steps": 50000,
-      "interval": 500,
-      "lr": 0.0015,
-      "patience": 10,
-      "max_new_tokens": 200,
-      "max_checkpoints": 10
+    "lstm": {
+      "runtime": {
+        "training": true,
+        "steps": 50000,
+        "interval": 500,
+        "patience": 10,
+        "max_new_tokens": 200,
+        "max_checkpoints": 10
+      },
+      "hparams": {
+        "batch_size": 32,
+        "block_size": 64,
+        "lr": 0.0015,
+        "embedding_dim": 64,
+        "hidden_size": 128,
+        "num_layers": 2
+      }
     },
-    "model": {
-      "embedding_dim": 64,
-      "hidden_size": 128,
-      "num_layers": 2
+    "transformer": {
+      "runtime": {
+        "max_new_tokens": 256
+      },
+      "hparams": {
+        "block_size": 32
+      }
     }
   },
-  "transformer": {
-    "runtime": {
-      "block_size": 32,
-      "max_new_tokens": 240
+  "auto_tuning": true,
+  "save_tuning": true,
+  "tuning_ranges": {
+    "batch_size": {
+      "type": "int",
+      "min": 8,
+      "max": 128,
+      "step": 8
     },
-    "model": {}
+    "block_size": {
+      "type": "int",
+      "min": 16,
+      "max": 256,
+      "step": 16
+    },
+    "lr": {
+      "type": "float",
+      "min": 0.0001,
+      "max": 0.1,
+      "log": true
+    },
+    "embedding_dim": {
+      "type": "int",
+      "min": 8,
+      "max": 128,
+      "step": 8
+    },
+    "hidden_size": {
+      "type": "int",
+      "min": 16,
+      "max": 256,
+      "step": 16
+    },
+    "num_layers": {
+      "type": "categorical",
+      "values": [1, 2, 3]
+    }
   },
   "visualization": {
     "show_plot": true,
@@ -162,6 +205,16 @@ You can configure:
 - Training parameters for each model
 - Model architecture parameters
 - Loss visualization settings
+- Hyperparameter tuning ranges and options
+
+## Hyperparameter Tuning
+
+Automatic hyperparameter tuning is supported via [Optuna](https://optuna.org/).
+
+- Enable tuning by setting `"auto_tuning": true` in `config.json`.
+- Define search spaces in the `"tuning_ranges"` section (supports `int`, `float`, and `categorical` types).
+- Tuning is integrated into the training workflow and can be controlled via the CLI or config.
+- Results are saved and can be used to update model hyperparameters automatically if `"save_tuning": true`.
 
 ## Usage
 
@@ -174,7 +227,7 @@ python main.py --model bigram
 # Train the LSTM model
 python main.py --model lstm
 
-# Use the Transformer model
+# Use the Transformer model (inference only)
 python main.py --model transformer
 ```
 
@@ -225,6 +278,7 @@ While not yet semantically coherent, the model demonstrates accurate word shapes
 - numpy
 - transformers
 - pytest (for testing)
+- optuna (for hyperparameter tuning)
 
 Install all dependencies with:
 
@@ -245,7 +299,7 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 
 ## Testing
 
-- The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, and model/CLI behavior.
+- The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior.
 - Tests are written using `pytest` and are located in the `tests/` directory.
 - To run all tests:
   ```bash
@@ -261,13 +315,12 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
   pytest tests/test_utils.py
   ```
 - Test output will show which tests passed or failed, and coverage will report which lines are tested.
-- Coverage includes data processing, plotting, model logic, CLI argument parsing, and more.
-- Current unit test coverage is 96% (357 stmts, 15 miss).
+- Coverage includes data processing, plotting, model logic, CLI argument parsing, tuning, and more.
+- Current unit test coverage is 96% (427 stmts, 19 miss).
 
 ## Future Improvements
 
 - Add temperature scaling for more controllable sampling
-- Add automatic hyperparameter tuning
 - Implement training for transformer model
 - Implement transformer model from scratch
 

@@ -10,6 +10,7 @@ from utils import (
     split_data,
     get_batch,
     get_metadata,
+    load_config,
     get_config,
     get_model,
     save_checkpoint,
@@ -17,45 +18,62 @@ from utils import (
 
 
 def get_models_config():
-    config = {
+    return {
         "runtime": {
             "training": True,
-            "batch_size": 2,
-            "block_size": 4,
             "steps": 1,
             "interval": 1,
-            "lr": 0.0015,
             "patience": 10,
             "max_new_tokens": 10,
             "max_checkpoints": 1,
         },
-        "model": {
+        "hparams": {
+            "batch_size": 2,
+            "block_size": 3,
+            "lr": 0.0015,
             "embedding_dim": 4,
             "hidden_size": 8,
             "num_layers": 1,
         },
     }
+
+
+def get_test_config():
     return {
-        "bigram": config,
-        "lstm": config,
-        "transformer": config,
+        "save_model": True,
+        "models": {
+            "bigram": get_models_config(),
+            "lstm": get_models_config(),
+            "transformer": get_models_config(),
+        },
+        "auto_tuning": False,
+        "visualization": {
+            "show_plot": False,
+            "smooth_loss": False,
+            "smooth_val_loss": False,
+            "weight": 1,
+            "save_data": False,
+        },
     }
 
 
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
+        config = get_test_config()["models"]["bigram"]
         super().__init__(
-            model_name="mock",
-            config=get_models_config()["bigram"]["runtime"],
-            cfg_path="config.json",
+            model_name="bigram",
+            config=config,
+            cfg_path=os.path.join(base_dir, "config.json"),
             vocab_size=10,
         )
-        self.name = "mock"
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
-        self.cfg_path = os.path.join(base_dir, "config.json")
+
+        for key, value in config.get("hparams", {}).items():
+            setattr(self, key, value)
+
         self.device = torch.device("cpu")
 
 
@@ -102,8 +120,7 @@ def test_get_batch(tmp_path):
     torch.manual_seed(42)
     model = MockModel(str(tmp_path))
     data = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    x, y = get_batch(model, data, batch_size=2, block_size=3)
-    print(x, y)
+    x, y = get_batch(model, data)
     assert x.tolist() == [[2, 3, 4], [3, 4, 5]]
     assert y.tolist() == [[3, 4, 5], [4, 5, 6]]
 
@@ -114,21 +131,29 @@ def test_get_metadata(tmp_path):
     assert get_metadata(path, "val_loss", float("inf")) == 1.5
 
 
+def test_load_config(tmp_path):
+    build_file(tmp_path, "config.json", '{"bigram": {"val_loss": 1.5}}')
+    assert load_config(tmp_path / "config.json") == {"bigram": {"val_loss": 1.5}}
+
+
 def test_get_config(tmp_path):
     build_file(tmp_path, "config.json", '{"bigram": {"val_loss": 1.5}}')
     assert get_config(tmp_path / "config.json", "bigram") == {"val_loss": 1.5}
 
 
 def test_get_model():
-    bigram = get_model(Model, "bigram", get_models_config(), "config.json", 10)
-    lstm = get_model(Model, "lstm", get_models_config(), "config.json", 10)
+    config = get_test_config()["models"]
+    bigram = get_model(Model, "bigram", config, "config.json", 10)
+    lstm = get_model(Model, "lstm", config, "config.json", 10)
+    transformer = get_model(Model, "transformer", config, "config.json", 10)
     assert bigram.__class__.__name__ == "BigramLanguageModel"
     assert lstm.__class__.__name__ == "LSTMLanguageModel"
+    assert transformer.__class__.__name__ == "TransformerLanguageModel"
 
 
 def test_save_checkpoint(tmp_path):
     model = MockModel(str(tmp_path))
-    build_file(tmp_path, "config.json", '{"mock": {"test": true}}')
+    build_file(tmp_path, "config.json", '{"models": {"bigram": {"test": true}}}')
     save_checkpoint(model, step=10, val_loss=1.33, max_checkpoints=5)
 
     with open(model.meta_path, "r", encoding="utf-8") as f:

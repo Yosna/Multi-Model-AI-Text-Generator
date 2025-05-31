@@ -7,16 +7,16 @@ def get_lstm_config():
     return {
         "runtime": {
             "training": True,
-            "batch_size": 2,
-            "block_size": 4,
             "steps": 1,
             "interval": 1,
-            "lr": 0.0015,
             "patience": 10,
             "max_new_tokens": 10,
             "max_checkpoints": 1,
         },
-        "model": {
+        "hparams": {
+            "batch_size": 2,
+            "block_size": 4,
+            "lr": 0.0015,
             "embedding_dim": 4,
             "hidden_size": 8,
             "num_layers": 1,
@@ -35,6 +35,19 @@ def get_lstm_model():
 def test_lstm_model():
     model = get_lstm_model()
     assert model is not None
+
+
+def test_lstm_model_no_vocab():
+    model_not_initialized = False
+    try:
+        Model.LSTMLM(
+            config=get_lstm_config(),
+            cfg_path="config.json",
+            vocab_size=0,
+        )
+    except ValueError:
+        model_not_initialized = True
+    assert model_not_initialized
 
 
 def test_lstm_model_init():

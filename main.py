@@ -1,3 +1,10 @@
+"""
+Main entry point for running and training language models.
+
+Handles argument parsing, dataset loading, model initialization, and dispatches
+training or text generation based on configuration and model type.
+"""
+
 from models.registry import ModelRegistry as Model
 import torch
 import random
@@ -10,13 +17,18 @@ from utils import (
     encode_data,
     get_model,
 )
-from training import train
+from tuning import optimize_and_train
 from library import get_dataset
 from typing import Any
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
+    """
+    Parse command-line arguments for model selection.
+
+    Returns:
+        argparse.Namespace: Parsed arguments with model selection.
+    """
     parser = argparse.ArgumentParser(description="Run a language model")
     parser.add_argument(
         "--model",
@@ -30,7 +42,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def main(args: argparse.Namespace, cfg_path: str) -> None:
-    """Prepare data, initialize model, and run training or generation."""
+    """
+    Prepare data, initialize model, and run training or generation.
+
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments.
+        cfg_path (str): Path to the configuration file.
+    """
     model_name = args.model.lower()
     datasets = get_config(cfg_path, "datasets")
     text = get_dataset(datasets["source"], datasets["locations"])
@@ -50,7 +68,16 @@ def validate_model(
     stoi: dict[str, int],
     itos: dict[int, str],
 ) -> None:
-    """Validate the type of model to determine the appropriate run method."""
+    """
+    Validate the type of model to determine the appropriate run method.
+
+    Args:
+        model (Model.BaseLM): The model instance.
+        text (str): The full dataset text.
+        data (torch.Tensor): Encoded dataset tensor.
+        stoi (dict[str, int]): Character-to-index mapping.
+        itos (dict[int, str]): Index-to-character mapping.
+    """
     if model.name == "transformer":
         generated_text = model.run(text)
         print(generated_text)
@@ -66,7 +93,17 @@ def run_model(
 ) -> None:
     """
     Run training or text generation for the model.
-    Loads from checkpoint if available. Randomizes seed character for generation.
+    Loads from checkpoint if available.
+    Randomizes seed character for generation.
+
+    Args:
+        model (Model.BaseLM): The model instance.
+        data (torch.Tensor): Encoded dataset tensor.
+        stoi (dict[str, int]): Character-to-index mapping.
+        itos (dict[int, str]): Index-to-character mapping.
+
+    Returns:
+        None
     """
     if os.path.exists(model.ckpt_path):
         try:
@@ -75,7 +112,7 @@ def run_model(
             print(f"Error loading model: {e}")
 
     if model.training:
-        train(model, data)
+        optimize_and_train(model, data)
     else:
         seed_char = random.choice(list(stoi.keys()))
         start_idx = stoi[seed_char]

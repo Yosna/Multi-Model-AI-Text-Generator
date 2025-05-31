@@ -13,16 +13,16 @@ def get_models_config():
     config = {
         "runtime": {
             "training": True,
-            "batch_size": 2,
-            "block_size": 4,
             "steps": 1,
             "interval": 1,
-            "lr": 0.0015,
             "patience": 10,
             "max_new_tokens": 10,
             "max_checkpoints": 1,
         },
-        "model": {
+        "hparams": {
+            "batch_size": 2,
+            "block_size": 4,
+            "lr": 0.0015,
             "embedding_dim": 4,
             "hidden_size": 8,
             "num_layers": 1,
@@ -37,20 +37,25 @@ def get_models_config():
 
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir, model_name, vocab_size=5):
+        config = get_models_config()[model_name]
         super().__init__(
             model_name=model_name,
-            config=get_models_config()[model_name]["runtime"],
+            config=config,
             cfg_path="config.json",
             vocab_size=vocab_size,
         )
         self.name = model_name
+        self.vocab_size = vocab_size
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
         self.cfg_path = os.path.join(base_dir, "config.json")
+
+        for key, value in config.get("hparams", {}).items():
+            setattr(self, key, value)
+
         self.device = torch.device("cpu")
-        self.vocab_size = vocab_size
         self.embedding = nn.Embedding(vocab_size, 1)
 
     def forward(self, idx, targets):
@@ -83,30 +88,31 @@ def get_test_config(tmp_path):
                 "bigram": {
                     "runtime": {
                         "training": True,
-                        "batch_size": 1,
-                        "block_size": 1,
                         "steps": 1,
                         "interval": 1,
-                        "lr": 1,
                         "patience": 1,
                         "max_new_tokens": 1,
                         "max_checkpoints": 1,
                     },
-                    "model": {},
+                    "hparams": {
+                        "batch_size": 1,
+                        "block_size": 1,
+                        "lr": 1,
+                    },
                 },
                 "lstm": {
                     "runtime": {
                         "training": True,
-                        "batch_size": 1,
-                        "block_size": 1,
                         "steps": 1,
                         "interval": 1,
-                        "lr": 1,
                         "patience": 1,
                         "max_new_tokens": 1,
                         "max_checkpoints": 1,
                     },
-                    "model": {
+                    "hparams": {
+                        "batch_size": 1,
+                        "block_size": 1,
+                        "lr": 1,
                         "embedding_dim": 1,
                         "hidden_size": 1,
                         "num_layers": 1,
@@ -114,19 +120,14 @@ def get_test_config(tmp_path):
                 },
                 "transformer": {
                     "runtime": {
-                        "training": True,
-                        "batch_size": 1,
-                        "block_size": 1,
-                        "steps": 1,
-                        "interval": 1,
-                        "lr": 1,
-                        "patience": 1,
                         "max_new_tokens": 1,
-                        "max_checkpoints": 1,
                     },
-                    "model": {},
+                    "hparams": {
+                        "block_size": 1,
+                    },
                 },
             },
+            "auto_tuning": False,
             "visualization": {
                 "show_plot": False,
                 "smooth_loss": False,

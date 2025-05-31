@@ -1,3 +1,14 @@
+"""
+Dataset loading utilities for local files, Hugging Face datasets, and a built-in
+library of pre-configured datasets.
+
+Includes:
+- DATASET_LIBRARY: Pre-configured dataset metadata for quick access.
+- get_dataset: Unified interface for loading datasets from various sources.
+- _load_from_local: Helper for loading and concatenating local text files.
+- _load_from_huggingface: Helper for loading text fields from Hugging Face datasets.
+"""
+
 from datasets import load_dataset
 import os
 

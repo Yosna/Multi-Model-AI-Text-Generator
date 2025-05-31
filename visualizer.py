@@ -1,14 +1,24 @@
+"""
+Visualization utilities for plotting training and validation loss curves.
+
+Includes:
+- plot_losses: Plot and optionally save/smooth loss curves.
+- smooth: Exponential smoothing for loss values.
+- save_plot: Save matplotlib plots with timestamped filenames.
+"""
+
 from models.registry import ModelRegistry as Model
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime
+from typing import Any
 
 
 def plot_losses(
     model: Model.BaseLM,
     losses: list[float],
     val_losses: list[float],
-    interval: int,
+    step_divisor: int,
     show_plot: bool,
     smooth_loss: bool,
     smooth_val_loss: bool,
@@ -24,7 +34,7 @@ def plot_losses(
             (must have a 'name' and 'plot_dir' attribute)
         losses (list[float]): Training loss values.
         val_losses (list[float]): Validation loss values.
-        interval (int): Step interval for validation loss.
+        step_divisor (int): Step divisor for validation loss.
         show_plot (bool): Option to display the plot interactively.
         smooth_loss (bool): Option to smooth the training loss curve.
         smooth_val_loss (bool): Option to smooth the validation loss curve.
@@ -32,7 +42,7 @@ def plot_losses(
         save_data (bool): Option to save the plot as an image file.
     """
     steps = range(len(losses))
-    val_steps = [i * interval for i in range(len(val_losses))]
+    val_steps = [i * model.interval for i in range(len(val_losses))]
     losses = smooth(losses, weight) if smooth_loss else losses
     val_losses = smooth(val_losses, weight) if smooth_val_loss else val_losses
 
@@ -45,11 +55,15 @@ def plot_losses(
     plt.grid(True)
     plt.tight_layout()
 
-    if save_data:
+    full_training_run = step_divisor == 1
+    if save_data and full_training_run:
         save_plot(model, plt, "losses")
 
-    if show_plot:
+    if show_plot and full_training_run:
         plt.show()
+
+    if not full_training_run:
+        plt.close("all")
 
 
 def smooth(values: list[float], weight: float) -> list[float]:
@@ -75,7 +89,7 @@ def smooth(values: list[float], weight: float) -> list[float]:
     return smoothed_values
 
 
-def save_plot(model: Model.BaseLM, plt: type, plot_name: str) -> None:
+def save_plot(model: Model.BaseLM, plt: Any, plot_name: str) -> None:
     """
     Save the current matplotlib plot to the model's plot directory.
     Plots are timestamped for unique naming.

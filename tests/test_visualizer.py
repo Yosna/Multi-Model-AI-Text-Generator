@@ -1,14 +1,18 @@
 from models.registry import ModelRegistry as Model
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import os
 from visualizer import plot_losses, smooth, save_plot
 
+matplotlib.use("Agg")
+
 
 class MockModel(Model.BaseLM):
     def __init__(self, tmp_path):
         self.name = "mock"
+        self.interval = 1
         self.plot_dir = os.path.join(tmp_path, self.name)
 
 
@@ -22,7 +26,7 @@ def test_plot_losses(tmp_path):
         MockModel(tmp_path),
         losses,
         val_losses,
-        interval=1,
+        step_divisor=1,
         show_plot=False,
         smooth_loss=False,
         smooth_val_loss=False,
