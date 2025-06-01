@@ -113,8 +113,7 @@ def test_lstm_model_generate():
     model.device = torch.device("cpu")
     start_idx = 1
     itos = {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}
-    max_new_tokens = 5
-    generated = model.generate(start_idx, itos, max_new_tokens)
+    generated = model.generate(start_idx, itos)
     assert isinstance(generated, str)
     assert generated[0] == "H"
-    assert len(generated) == max_new_tokens + 1
+    assert len(generated) == model.max_new_tokens + 1

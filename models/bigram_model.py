@@ -91,7 +91,6 @@ class BigramLanguageModel(BaseLanguageModel):
         self,
         start_idx: int,
         itos: dict[int, str],
-        max_new_tokens: int,
     ) -> str:
         """
         Generate new text by sampling from the model's predictions.
@@ -110,7 +109,7 @@ class BigramLanguageModel(BaseLanguageModel):
         idx = torch.tensor([[start_idx]], dtype=torch.long, device=self.device)
         generated = torch.tensor([start_idx], dtype=torch.long, device=self.device)
 
-        for _ in range(max_new_tokens):
+        for _ in range(self.max_new_tokens):
             # Get predictions for next step
             logits, _ = self(idx)
             next_idx = self.new_token(logits)

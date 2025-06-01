@@ -132,7 +132,6 @@ class LSTMLanguageModel(BaseLanguageModel):
         self,
         start_idx: int,
         itos: dict[int, str],
-        max_new_tokens: int,
     ) -> str:
         """
         Generate new text by sampling from the model's predictions.
@@ -154,7 +153,7 @@ class LSTMLanguageModel(BaseLanguageModel):
         generated = torch.tensor([start_idx], dtype=torch.long, device=self.device)
         hidden = None
 
-        for _ in range(max_new_tokens):
+        for _ in range(self.max_new_tokens):
             # Get predictions and update hidden state for next step:
             logits, _, hidden = self(idx, hidden=hidden)
             next_idx = self.new_token(logits)
