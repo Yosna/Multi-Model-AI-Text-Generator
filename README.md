@@ -304,7 +304,8 @@ While not yet semantically coherent, the model demonstrates accurate word shapes
 - datasets (Hugging Face)
 - numpy
 - transformers
-- pytest (for testing)
+- pytest (for unit testing)
+- coverage (for test coverage reporting)
 - optuna (for hyperparameter tuning)
 
 Install all dependencies with:
@@ -326,8 +327,8 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 
 ## Testing
 
-- The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior.
-- Tests are written using `pytest` and are located in the `tests/` directory.
+- The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior. Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
+- Tests are located in the `tests/` directory.
 - To run all tests:
   ```bash
   pytest

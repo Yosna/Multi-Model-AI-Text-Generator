@@ -1,3 +1,4 @@
+coverage==7.8.2
 datasets==3.6.0
 matplotlib==3.10.3
 numpy==2.2.6
