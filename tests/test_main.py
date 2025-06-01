@@ -9,69 +9,7 @@ from unittest.mock import patch
 from main import parse_args, main, validate_model, run_model
 
 
-def get_models_config():
-    config = {
-        "runtime": {
-            "training": True,
-            "steps": 1,
-            "interval": 1,
-            "patience": 10,
-            "max_new_tokens": 10,
-            "max_checkpoints": 1,
-        },
-        "hparams": {
-            "batch_size": 2,
-            "block_size": 4,
-            "lr": 0.0015,
-            "embedding_dim": 4,
-            "hidden_size": 8,
-            "num_layers": 1,
-        },
-    }
-    return {
-        "bigram": config,
-        "lstm": config,
-        "transformer": config,
-    }
-
-
-class MockModel(Model.BaseLM):
-    def __init__(self, base_dir, model_name, vocab_size=5):
-        config = get_models_config()[model_name]
-        super().__init__(
-            model_name=model_name,
-            config=config,
-            cfg_path="config.json",
-            vocab_size=vocab_size,
-        )
-        self.name = model_name
-        self.vocab_size = vocab_size
-        self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
-        self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
-        self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
-        self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
-        self.cfg_path = os.path.join(base_dir, "config.json")
-
-        for key, value in config.get("hparams", {}).items():
-            setattr(self, key, value)
-
-        self.device = torch.device("cpu")
-        self.embedding = nn.Embedding(vocab_size, 1)
-
-    def forward(self, idx, targets):
-        return None, torch.tensor(1)
-
-    def train_step(self, xb, yb, optimizer):
-        return torch.tensor(1)
-
-    def run(self, text, **config):
-        return "Transformer output"
-
-    def generate(self, start_idx, itos, max_new_tokens):
-        return "Bigram & LSTM output"
-
-
-def get_test_config(tmp_path):
+def get_test_config(tmp_path, training=True):
     return json.dumps(
         {
             "datasets": {
@@ -85,47 +23,10 @@ def get_test_config(tmp_path):
             },
             "save_model": False,
             "models": {
-                "bigram": {
-                    "runtime": {
-                        "training": True,
-                        "steps": 1,
-                        "interval": 1,
-                        "patience": 1,
-                        "max_new_tokens": 1,
-                        "max_checkpoints": 1,
-                    },
-                    "hparams": {
-                        "batch_size": 1,
-                        "block_size": 1,
-                        "lr": 1,
-                    },
-                },
-                "lstm": {
-                    "runtime": {
-                        "training": True,
-                        "steps": 1,
-                        "interval": 1,
-                        "patience": 1,
-                        "max_new_tokens": 1,
-                        "max_checkpoints": 1,
-                    },
-                    "hparams": {
-                        "batch_size": 1,
-                        "block_size": 1,
-                        "lr": 1,
-                        "embedding_dim": 1,
-                        "hidden_size": 1,
-                        "num_layers": 1,
-                    },
-                },
-                "transformer": {
-                    "runtime": {
-                        "max_new_tokens": 1,
-                    },
-                    "hparams": {
-                        "block_size": 1,
-                    },
-                },
+                "bigram": get_test_model(training),
+                "lstm": get_test_model(training),
+                "gru": get_test_model(training),
+                "transformer": get_test_model(training=False),
             },
             "auto_tuning": False,
             "visualization": {
@@ -137,6 +38,61 @@ def get_test_config(tmp_path):
             },
         }
     )
+
+
+def get_test_model(training):
+    return {
+        "runtime": {
+            "training": training,
+            "steps": 1,
+            "interval": 1,
+            "patience": 1,
+            "max_new_tokens": 1,
+            "max_checkpoints": 1,
+        },
+        "hparams": {
+            "batch_size": 2,
+            "block_size": 4,
+            "lr": 0.0015,
+            "embedding_dim": 4,
+            "hidden_size": 8,
+            "num_layers": 1,
+        },
+    }
+
+
+class MockModel(Model.BaseLM):
+    def __init__(self, base_dir, model_name, vocab_size=5, training=True):
+        config = json.loads(get_test_config(base_dir, training))["models"][model_name]
+        super().__init__(
+            model_name=model_name,
+            config=config,
+            cfg_path="config.json",
+            vocab_size=vocab_size,
+        )
+        self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
+        self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
+        self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
+        self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
+        self.cfg_path = os.path.join(base_dir, "config.json")
+
+        for key, value in config.get("hparams", {}).items():
+            setattr(self, key, value)
+
+        self.device = torch.device("cpu")
+        self.embedding = nn.Embedding(vocab_size, 1)
+
+    def forward(self, *_, **__):
+        return None, torch.tensor(1)
+
+    def train_step(self, *_, **__):
+        return torch.tensor(1)
+
+    def run(self, *_, **__):
+        return "Transformer output"
+
+    def generate(self, *_, **__):
+        return "Bigram & LSTM output"
 
 
 def build_test_dataset(tmp_path):
@@ -160,14 +116,15 @@ def test_parse_args():
         assert args is not None
 
 
-def test_parse_args_default():
+def test_parse_args_default_model():
     cli_args = ["main.py"]
+    default_model = "transformer"
     with patch.object(sys, "argv", cli_args):
         args = parse_args()
-        assert args.model == "transformer"
+        assert args.model == default_model
 
 
-@pytest.mark.parametrize("model", ["bigram", "lstm", "transformer"])
+@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
 def test_parse_args_model(model):
     cli_args = ["main.py", "--model", model]
     with patch.object(sys, "argv", cli_args):
@@ -185,7 +142,7 @@ def test_parse_args_invalid(invalid):
             assert e.code == 2
 
 
-@pytest.mark.parametrize("model", ["bigram", "lstm", "transformer"])
+@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
 def test_main(tmp_path, model):
     main_ran_successfully = False
     cli_args = ["main.py", "--model", model]
@@ -201,14 +158,13 @@ def test_main(tmp_path, model):
     assert main_ran_successfully
 
 
-@pytest.mark.parametrize("model", ["bigram", "lstm", "transformer"])
+@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
 def test_validate_model(tmp_path, model):
     validate_model_ran_successfully = False
-    config_path = build_file(tmp_path, "config.json", get_test_config(tmp_path))
-    config = json.loads(config_path.read_text())
+    build_file(tmp_path, "config.json", get_test_config(tmp_path))
     try:
         validate_model(
-            model=MockModel(str(tmp_path), model),
+            model=MockModel(tmp_path, model),
             text="Hello!",
             data=torch.tensor([i for i in range(100)]),
             stoi={"!": 0, "H": 1, "e": 2, "l": 3, "o": 4},
@@ -220,14 +176,29 @@ def test_validate_model(tmp_path, model):
     assert validate_model_ran_successfully
 
 
-@pytest.mark.parametrize("model", ["bigram", "lstm"])
-def test_run_model(tmp_path, model):
+@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
+def test_run_model_training(tmp_path, model):
     run_model_ran_successfully = False
-    config_path = build_file(tmp_path, "config.json", get_test_config(tmp_path))
-    config = json.loads(config_path.read_text())
+    build_file(tmp_path, "config.json", get_test_config(tmp_path))
     try:
         run_model(
-            model=MockModel(str(tmp_path), model),
+            model=MockModel(tmp_path, model, training=True),
+            data=torch.tensor([i for i in range(100)]),
+            stoi={"!": 0, "H": 1, "e": 2, "l": 3, "o": 4},
+            itos={0: "!", 1: "H", 2: "e", 3: "l", 4: "o"},
+        )
+        run_model_ran_successfully = True
+    except Exception as e:
+        print(e)
+    assert run_model_ran_successfully
+
+
+@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
+def test_run_model_generation(tmp_path, model):
+    run_model_ran_successfully = False
+    try:
+        run_model(
+            model=MockModel(tmp_path, model, training=False),
             data=torch.tensor([i for i in range(100)]),
             stoi={"!": 0, "H": 1, "e": 2, "l": 3, "o": 4},
             itos={0: "!", 1: "H", 2: "e", 3: "l", 4: "o"},

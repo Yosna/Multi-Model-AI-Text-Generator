@@ -34,8 +34,8 @@ def parse_args() -> argparse.Namespace:
         "--model",
         type=str,
         default="transformer",
-        choices=["bigram", "lstm", "transformer"],
-        metavar="[bigram|lstm|transformer]",
+        choices=["bigram", "lstm", "gru", "transformer"],
+        metavar="[bigram|lstm|gru|transformer]",
         help="Model name to use from config.json",
     )
     return parser.parse_args()
@@ -110,7 +110,6 @@ def run_model(
             model.load_state_dict(torch.load(model.ckpt_path))
         except Exception as e:
             print(f"Error loading model: {e}")
-
     if model.training:
         optimize_and_train(model, data)
     else:

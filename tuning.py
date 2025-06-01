@@ -39,7 +39,6 @@ def optimize_and_train(model: Model.BaseLM, data: torch.Tensor, n_trials: int = 
         study.optimize(objective, n_trials=n_trials)
 
         best_params = study.best_trial.params
-        model.lr = best_params["lr"]
 
         if config.get("save_tuning", False):
             hparams.update(best_params)

@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 
 
-def get_lstm_config():
+def get_gru_config():
     return {
         "runtime": {
             "training": True,
@@ -24,24 +24,24 @@ def get_lstm_config():
     }
 
 
-def get_lstm_model():
-    return Model.LSTMLM(
-        config=get_lstm_config(),
+def get_gru_model():
+    return Model.GRULM(
+        config=get_gru_config(),
         cfg_path="config.json",
         vocab_size=5,
     )
 
 
-def test_lstm_model():
-    model = get_lstm_model()
+def test_gru_model():
+    model = get_gru_model()
     assert model is not None
 
 
-def test_lstm_model_no_vocab():
+def test_gru_model_no_vocab():
     model_not_initialized = False
     try:
-        Model.LSTMLM(
-            config=get_lstm_config(),
+        Model.GRULM(
+            config=get_gru_config(),
             cfg_path="config.json",
             vocab_size=0,
         )
@@ -50,43 +50,43 @@ def test_lstm_model_no_vocab():
     assert model_not_initialized
 
 
-def test_lstm_model_init():
-    model = get_lstm_model()
-    assert model.name == "lstm"
+def test_gru_model_init():
+    model = get_gru_model()
+    assert model.name == "gru"
     assert model.vocab_size == 5
     assert model.embedding_dim == 4
     assert model.hidden_size == 8
     assert model.num_layers == 1
 
 
-def test_lstm_model_embedding_layer():
-    model = get_lstm_model()
+def test_gru_model_embedding_layer():
+    model = get_gru_model()
     assert isinstance(model.embedding, nn.Embedding)
     assert model.embedding.num_embeddings == 5
     assert model.embedding.embedding_dim == 4
 
 
-def test_lstm_model_lstm_layer():
-    model = get_lstm_model()
-    assert isinstance(model.lstm, nn.LSTM)
-    assert model.lstm.input_size == 4
-    assert model.lstm.hidden_size == 8
-    assert model.lstm.num_layers == 1
-    assert model.lstm.batch_first
+def test_gru_model_gru_layer():
+    model = get_gru_model()
+    assert isinstance(model.gru, nn.GRU)
+    assert model.gru.input_size == 4
+    assert model.gru.hidden_size == 8
+    assert model.gru.num_layers == 1
+    assert model.gru.batch_first
 
 
-def test_lstm_model_fc_layer():
-    model = get_lstm_model()
+def test_gru_model_fc_layer():
+    model = get_gru_model()
     assert isinstance(model.fc, nn.Linear)
     assert model.fc.in_features == 8
     assert model.fc.out_features == 5
     assert model.fc.bias is not None
 
 
-def test_lstm_model_repr():
-    model = get_lstm_model()
+def test_gru_model_repr():
+    model = get_gru_model()
     assert str(model) == (
-        f"LSTMLanguageModel(\n"
+        f"GRULanguageModel(\n"
         f"\tvocab_size={model.vocab_size},\n"
         f"\tembedding_dim={model.embedding_dim},\n"
         f"\thidden_size={model.hidden_size},\n"
@@ -95,21 +95,20 @@ def test_lstm_model_repr():
     ).expandtabs(4)
 
 
-def test_lstm_model_forward():
-    model = get_lstm_model()
+def test_gru_model_forward():
+    model = get_gru_model()
     idx = torch.tensor([[0, 1, 2, 3, 4]])
     targets = torch.tensor([1, 2, 3, 4, 0])
     logits, loss, hidden = model(idx, targets)
     assert logits.shape == torch.Size([5, 5])
     assert loss > 0
-    assert isinstance(hidden, tuple)
-    assert len(hidden) == 2
-    assert hidden[0].shape == torch.Size([1, 1, 8])
-    assert hidden[1].shape == torch.Size([1, 1, 8])
+    assert isinstance(hidden, torch.Tensor)
+    assert len(hidden) == 1
+    assert hidden.shape == torch.Size([1, 1, 8])
 
 
-def test_lstm_model_generate():
-    model = get_lstm_model()
+def test_gru_model_generate():
+    model = get_gru_model()
     model.device = torch.device("cpu")
     start_idx = 1
     itos = {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}

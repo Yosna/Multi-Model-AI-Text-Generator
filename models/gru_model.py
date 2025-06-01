@@ -5,14 +5,14 @@ from utils import decode_data
 from typing import Any
 
 
-class LSTMLanguageModel(BaseLanguageModel):
+class GRULanguageModel(BaseLanguageModel):
     """
-    An LSTM-based language model that predicts the next character in a sequence.
+    A GRU-based language model that predicts the next character in a sequence.
 
     Architecture:
         - Embedding layer converts character indices to dense vectors
-        - LSTM layers process sequences to capture long-range dependencies
-        - Linear layer projects LSTM output back to vocabulary size
+        - GRU layers process sequences to capture long-range dependencies
+        - Linear layer projects GRU output back to vocabulary size
 
     The model can maintain state between predictions, allowing it to learn
     longer-term patterns in the text compared to simpler models.
@@ -22,10 +22,10 @@ class LSTMLanguageModel(BaseLanguageModel):
         block_size (int): Length of input sequences.
         lr (float): Learning rate.
         embedding_dim (int): Dimension of embedding vectors.
-        hidden_size (int): Number of features in LSTM hidden state.
-        num_layers (int): Number of LSTM layers.
+        hidden_size (int): Number of features in GRU hidden state.
+        num_layers (int): Number of GRU layers.
         embedding (nn.Embedding): Embedding layer for character tokens.
-        lstm (nn.LSTM): LSTM layer(s) for sequence modeling.
+        gru (nn.GRU): GRU layer(s) for sequence modeling.
         fc (nn.Linear): Final linear layer for output projection.
         config["hparams"] keys: config.json hparams attributes.
             (type-hinted above __init__)
@@ -43,7 +43,7 @@ class LSTMLanguageModel(BaseLanguageModel):
 
     def __init__(self, config: dict[str, Any], cfg_path: str, vocab_size: int) -> None:
         """
-        Initialize the LSTM model and its parameters.
+        Initialize the GRU model and its parameters.
 
         Args:
             config (dict): Configuration dictionary for the model.
@@ -51,7 +51,7 @@ class LSTMLanguageModel(BaseLanguageModel):
             vocab_size (int): Number of unique tokens in the vocabulary.
         """
         super().__init__(
-            model_name="lstm",
+            model_name="gru",
             config=config,
             cfg_path=cfg_path,
             vocab_size=vocab_size,
@@ -63,16 +63,16 @@ class LSTMLanguageModel(BaseLanguageModel):
 
         # Each character gets a vector of size embedding_dim
         self.embedding = nn.Embedding(vocab_size, self.embedding_dim)
-        # LSTM layers process the embedded sequences
-        self.lstm = nn.LSTM(
+        # GRU layers process the embedded sequences
+        self.gru = nn.GRU(
             input_size=self.embedding_dim,
             hidden_size=self.hidden_size,
             num_layers=self.num_layers,
             batch_first=True,
         )
-        # Final layer projects LSTM output back to vocabulary size
+        # Final layer projects GRU output back to vocabulary size
         if not self.vocab_size:
-            raise ValueError("Vocab size is not set for LSTM model")
+            raise ValueError("Vocab size is not set for GRU model")
         self.fc = nn.Linear(self.hidden_size, self.vocab_size)
 
     def __repr__(self) -> str:
@@ -81,7 +81,7 @@ class LSTMLanguageModel(BaseLanguageModel):
             str: String representation of the model.
         """
         output = (
-            f"LSTMLanguageModel(\n"
+            f"GRULanguageModel(\n"
             f"\tvocab_size={self.vocab_size},\n"
             f"\tembedding_dim={self.embedding_dim},\n"
             f"\thidden_size={self.hidden_size},\n"
@@ -94,11 +94,11 @@ class LSTMLanguageModel(BaseLanguageModel):
         self,
         idx: torch.Tensor,
         targets: torch.Tensor | None = None,
-        hidden: tuple[torch.Tensor, torch.Tensor] | None = None,
+        hidden: torch.Tensor | None = None,
     ) -> tuple[
         torch.Tensor | None,
         torch.Tensor | None,
-        tuple[torch.Tensor, torch.Tensor] | None,
+        torch.Tensor | None,
     ]:
         """
         Compute logits and loss for input indices and targets.
@@ -107,19 +107,18 @@ class LSTMLanguageModel(BaseLanguageModel):
         Args:
             idx (torch.Tensor): Input token indices of shape (B, T).
             targets (torch.Tensor, optional): Target token indices of shape (B, T).
-            hidden (tuple[torch.Tensor, torch.Tensor], optional):
-                LSTM hidden state tuple (h_n, c_n).
+            hidden (torch.Tensor, optional): GRU hidden state (h_n).
 
         Returns:
             tuple: (logits, loss, hidden) where:
                 - logits: Model predictions of shape (B, T, vocab_size)
                 - loss: Cross entropy loss if targets provided, None otherwise
-                - hidden: Updated LSTM hidden state
+                - hidden: Updated GRU hidden state
         """
         # (B, T, embedding_dim): map indices to embeddings
         x = self.embedding(idx)
-        # (B, T, hidden_size): process sequence with LSTM
-        out, hidden = self.lstm(x, hidden)
+        # (B, T, hidden_size): process sequence with GRU
+        out, hidden = self.gru(x, hidden)
         # (B, T, vocab_size): project to vocabulary size
         logits = self.fc(out)
 
@@ -138,7 +137,7 @@ class LSTMLanguageModel(BaseLanguageModel):
         Generate new text by sampling from the model's predictions.
         Uses multinomial sampling to add randomness to the output.
         Starts from a seed index and generates max_new_tokens characters.
-        Maintains the LSTM hidden state to capture context across generated tokens.
+        Maintains the GRU hidden state to capture context across generated tokens.
         Returns the decoded string generated by the model.
 
         Args:

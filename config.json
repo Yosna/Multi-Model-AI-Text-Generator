@@ -52,6 +52,24 @@
         "num_layers": 2
       }
     },
+    "gru": {
+      "runtime": {
+        "training": true,
+        "steps": 50000,
+        "interval": 500,
+        "patience": 10,
+        "max_new_tokens": 200,
+        "max_checkpoints": 10
+      },
+      "hparams": {
+        "batch_size": 32,
+        "block_size": 64,
+        "lr": 0.0015,
+        "embedding_dim": 64,
+        "hidden_size": 128,
+        "num_layers": 2
+      }
+    },
     "transformer": {
       "runtime": {
         "max_new_tokens": 256

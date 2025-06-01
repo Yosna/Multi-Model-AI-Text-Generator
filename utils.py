@@ -203,6 +203,8 @@ def get_model(
         model = models.BigramLM(config[model_name], cfg_path, vocab_size)
     elif model_name == "lstm":
         model = models.LSTMLM(config[model_name], cfg_path, vocab_size)
+    elif model_name == "gru":
+        model = models.GRULM(config[model_name], cfg_path, vocab_size)
     elif model_name == "transformer":
         model = models.TransformerLM(config[model_name], cfg_path)
     else:

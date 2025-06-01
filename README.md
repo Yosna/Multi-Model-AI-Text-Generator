@@ -1,12 +1,13 @@
 # Text Generation Language Models in PyTorch
 
-This project implements three text generation language models using PyTorch:
+This project implements four text generation language models using PyTorch:
 
 - **Bigram model** — a simple neural network that learns character-to-character transition probabilities
 - **LSTM model** — a recurrent neural network capable of learning longer-range character sequences using memory and context
+- **GRU model** — a gated recurrent unit network for efficient sequence modeling with fewer parameters than LSTM
 - **Transformer model** — inference-only; uses a pre-built transformer for high-quality text generation (training not yet supported)
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (current coverage: 96%, 427 stmts / 19 miss).
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage: 97%, 470 stmts / 14 miss**).
 
 ## Table of Contents
 
@@ -28,14 +29,15 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 
 - Character-level tokenization across multiple input files
 - Dynamic vocabulary and index mapping
-- Modular model registry for Bigram, LSTM, and Transformer (inference-only)
+- Modular model registry for Bigram, LSTM, GRU, and Transformer (inference-only)
 - Configurable training and hyperparameter tuning via `config.json`
 - Automatic hyperparameter tuning with Optuna
 - Adam optimizer with early stopping
 - Automatic checkpoint rotation and resumption
 - Multinomial sampling for randomized generation
 - CLI interface to toggle models and behavior
-- Full unit test coverage (96%) for all major modules, including tuning and visualization
+- Full unit test coverage (97%) for all major modules.
+- Tests include generation and training for all models, tuning, and visualization
 - Loss visualization with matplotlib, including smoothing and saving plots
 - GPU-accelerated training by default
 - Integrated dataset library with pre-configured datasets
@@ -50,6 +52,10 @@ A lightweight model that uses an embedding table to predict the next character f
 ### LSTM Model
 
 A recurrent neural network using embedding, multi-layer LSTM, and projection back to vocab size. Learns long-range dependencies across sequences for improved generation.
+
+### GRU Model
+
+A gated recurrent unit network that efficiently models sequences with fewer parameters than LSTM, providing a balance between speed and performance.
 
 ### Transformer Model
 
@@ -142,6 +148,24 @@ Example:
         "num_layers": 2
       }
     },
+    "gru": {
+      "runtime": {
+        "training": true,
+        "steps": 50000,
+        "interval": 500,
+        "patience": 10,
+        "max_new_tokens": 200,
+        "max_checkpoints": 10
+      },
+      "hparams": {
+        "batch_size": 40,
+        "block_size": 64,
+        "lr": 0.0007923470143078948,
+        "embedding_dim": 48,
+        "hidden_size": 256,
+        "num_layers": 1
+      }
+    },
     "transformer": {
       "runtime": {
         "max_new_tokens": 256
@@ -226,6 +250,9 @@ python main.py --model bigram
 
 # Train the LSTM model
 python main.py --model lstm
+
+# Train the GRU model
+python main.py --model gru
 
 # Use the Transformer model (inference only)
 python main.py --model transformer
@@ -316,7 +343,7 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
   ```
 - Test output will show which tests passed or failed, and coverage will report which lines are tested.
 - Coverage includes data processing, plotting, model logic, CLI argument parsing, tuning, and more.
-- Current unit test coverage is 96% (427 stmts, 19 miss).
+- Current unit test coverage is 97% (470 stmts / 14 miss).
 
 ## Future Improvements
 

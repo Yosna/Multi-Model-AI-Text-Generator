@@ -70,6 +70,6 @@ def test_bigram_model_generate():
     itos = {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}
     max_new_tokens = 5
     generated = model.generate(start_idx, itos, max_new_tokens)
-    assert type(generated) == str
+    assert isinstance(generated, str)
     assert generated[0] == "H"
     assert len(generated) == max_new_tokens + 1

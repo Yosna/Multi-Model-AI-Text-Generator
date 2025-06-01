@@ -88,7 +88,7 @@ def test_base_model_new_token():
     model = BaseLanguageModel()
     logits = torch.tensor([0.1, 0.2, 0.3, 0.4, 0.5]).repeat(1, 10, 1)
     next_idx = model.new_token(logits)
-    assert type(next_idx) == torch.Tensor
+    assert isinstance(next_idx, torch.Tensor)
     assert next_idx.shape == torch.Size([1, 1])
     assert model.vocab_size is not None
     assert next_idx.item() in range(model.vocab_size)
