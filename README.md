@@ -21,6 +21,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - [GPU Acceleration](#gpu-acceleration)
 - [Example Output (LSTM)](#example-output-lstm)
 - [Dependencies](#dependencies)
+- [Docker Usage](#docker-usage)
 - [Testing](#testing)
 - [Future Improvements](#future-improvements)
 - [License](#license)
@@ -325,10 +326,36 @@ For example, to install PyTorch with CUDA 11.8 support:
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
+## Docker Usage
+
+You can run this project in a Docker container for a fully isolated and reproducible environment.
+
+### Build the Docker image
+
+```bash
+docker build -t <your-image-name> .
+```
+
+### Run the Docker container
+
+```bash
+docker run --rm -it <your-image-name>:latest
+```
+
+### Notes
+
+- The provided `Dockerfile` uses the `python:3.11-slim` base image for a smaller footprint.
+- It explicitly installs the **CPU-only** version of PyTorch to avoid large image sizes. If you need GPU support, modify the Dockerfile and requirements accordingly.
+- The `.dockerignore` file is configured to exclude unnecessary files (such as datasets, checkpoints, and virtual environments) from the image. If you add new large files or folders, update `.dockerignore` to keep your image size small.
+- If you encounter issues with image size, check that you are not copying large files or using the GPU version of torch by accident.
+
+You can modify the `CMD` in the Dockerfile to run other scripts or pass arguments as needed.
+
 ## Testing
 
-- The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior. Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
-- Tests are located in the `tests/` directory.
+- The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior.
+- Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
+- All unit tests are located in the `tests/` directory.
 - To run all tests:
   ```bash
   pytest
