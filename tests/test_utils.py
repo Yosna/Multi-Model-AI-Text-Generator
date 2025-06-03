@@ -10,6 +10,7 @@ from utils import (
     split_data,
     get_batch,
     get_metadata,
+    save_config,
     load_config,
     get_config,
     get_model,
@@ -44,6 +45,7 @@ def get_test_config():
         "models": {
             "bigram": get_models_config(),
             "lstm": get_models_config(),
+            "gru": get_models_config(),
             "transformer": get_models_config(),
         },
         "auto_tuning": False,
@@ -126,39 +128,82 @@ def test_get_batch(tmp_path):
 
 
 def test_get_metadata(tmp_path):
-    build_file(tmp_path, "metadata.json", '{"val_loss": 1.5}')
-    path = tmp_path / "metadata.json"
-    assert get_metadata(path, "val_loss", float("inf")) == 1.5
+    meta_path = build_file(tmp_path, "metadata.json", '{"val_loss": 1.5}')
+    assert get_metadata(meta_path, "val_loss", float("inf")) == 1.5
+
+
+def test_save_config(tmp_path):
+    cfg_path = build_file(tmp_path, "config.json", '{"test_passed": false}')
+    config = {"test_passed": True}
+    save_config(config, cfg_path)
+    with open(cfg_path, "r", encoding="utf-8") as f:
+        test_passed = json.load(f)["test_passed"]
+    assert test_passed
 
 
 def test_load_config(tmp_path):
-    build_file(tmp_path, "config.json", '{"bigram": {"val_loss": 1.5}}')
-    assert load_config(tmp_path / "config.json") == {"bigram": {"val_loss": 1.5}}
+    cfg_path = build_file(tmp_path, "config.json", '{"bigram": {"val_loss": 1.5}}')
+    assert load_config(cfg_path) == {"bigram": {"val_loss": 1.5}}
 
 
 def test_get_config(tmp_path):
-    build_file(tmp_path, "config.json", '{"bigram": {"val_loss": 1.5}}')
-    assert get_config(tmp_path / "config.json", "bigram") == {"val_loss": 1.5}
+    cfg_path = build_file(tmp_path, "config.json", '{"bigram": {"val_loss": 1.5}}')
+    assert get_config(cfg_path, "bigram") == {"val_loss": 1.5}
+
+
+def test_get_config_errors(tmp_path):
+    cfg_path = build_file(tmp_path, "config.json", '{"invalid_value": null}')
+    value_error_triggered = False
+    key_error_triggered = False
+    try:
+        get_config(cfg_path, "invalid_value")
+    except ValueError:
+        value_error_triggered = True
+    try:
+        get_config(cfg_path, "invalid_key")
+    except KeyError:
+        key_error_triggered = True
+    assert value_error_triggered
+    assert key_error_triggered
 
 
 def test_get_model():
     config = get_test_config()["models"]
     bigram = get_model(Model, "bigram", config, "config.json", 10)
     lstm = get_model(Model, "lstm", config, "config.json", 10)
+    gru = get_model(Model, "gru", config, "config.json", 10)
     transformer = get_model(Model, "transformer", config, "config.json", 10)
     assert bigram.__class__.__name__ == "BigramLanguageModel"
     assert lstm.__class__.__name__ == "LSTMLanguageModel"
+    assert gru.__class__.__name__ == "GRULanguageModel"
     assert transformer.__class__.__name__ == "TransformerLanguageModel"
+
+
+def test_get_model_error():
+    config = get_test_config()["models"]
+    value_error_triggered = False
+    try:
+        get_model(Model, "test", config, "config.json", 10)
+    except ValueError:
+        value_error_triggered = True
+    assert value_error_triggered
 
 
 def test_save_checkpoint(tmp_path):
     model = MockModel(str(tmp_path))
+    checkpoints = 0
     build_file(tmp_path, "config.json", '{"models": {"bigram": {"test": true}}}')
-    save_checkpoint(model, step=10, val_loss=1.33, max_checkpoints=5)
+    for i in range(11):
+        save_checkpoint(model, step=i, val_loss=1.33, max_checkpoints=10)
 
     with open(model.meta_path, "r", encoding="utf-8") as f:
         metadata = json.load(f)
 
+    for i in range(1, 11):
+        checkpoint = os.path.join(model.dir_path, f"checkpoint_{i}")
+        checkpoints += 1 if os.path.exists(checkpoint) else 0
+
+    assert checkpoints == 10
     assert os.path.exists(model.ckpt_path)
     assert os.path.exists(model.meta_path)
     assert "timestamp" in metadata

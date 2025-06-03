@@ -1,6 +1,7 @@
 from models.registry import ModelRegistry as Model
 import torch
 import torch.nn as nn
+from optuna import TrialPruned
 import os
 import json
 from training import train, validate_data
@@ -64,6 +65,14 @@ class MockModel(Model.BaseLM):
         return torch.tensor(1)
 
 
+class MockTrial:
+    def should_prune(self):
+        return True
+
+    def report(self, *_, **__):
+        pass
+
+
 def build_file(tmp_path, file_name, content):
     file = tmp_path / file_name
     file.write_text(content)
@@ -95,3 +104,16 @@ def test_validate_data(tmp_path):
     assert overfit == False
     assert best_loss == torch.tensor(1)
     assert wait == 0
+
+
+def test_trial_pruning(tmp_path):
+    build_file(tmp_path, "config.json", json.dumps(get_test_config()))
+    model = MockModel(str(tmp_path))
+    data = torch.tensor([i for i in range(100)])
+    trial = MockTrial()
+    trial_pruned = False
+    try:
+        train(model, data, trial)  # type: ignore
+    except TrialPruned:
+        trial_pruned = True
+    assert trial_pruned

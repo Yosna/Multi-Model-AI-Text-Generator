@@ -12,7 +12,7 @@ import optuna
 from optuna.pruners import MedianPruner
 import json
 from training import train
-from utils import load_config, get_config, get_model
+from utils import save_config, load_config, get_config, get_model
 
 
 def optimize_and_train(model: Model.BaseLM, data: torch.Tensor, n_trials: int = 50):
@@ -28,7 +28,7 @@ def optimize_and_train(model: Model.BaseLM, data: torch.Tensor, n_trials: int = 
         data (torch.Tensor): Full dataset as a 1D tensor of encoded characters.
     """
     config = load_config(model.cfg_path)
-    hparams = config["models"][model.name]["hparams"]
+    hparams = config["models"][model.name]["hparams"] or {}
 
     if config.get("auto_tuning", False):
         objective = make_objective(model, data)
@@ -42,8 +42,7 @@ def optimize_and_train(model: Model.BaseLM, data: torch.Tensor, n_trials: int = 
 
         if config.get("save_tuning", False):
             hparams.update(best_params)
-            with open(model.cfg_path, "w") as f:
-                json.dump(config, f, indent=2)
+            save_config(config, model.cfg_path)
 
     return train(model, data)
 
@@ -63,9 +62,9 @@ def make_objective(model: Model.BaseLM, data: torch.Tensor):
         Callable[[optuna.Trial], float]: Objective function for Optuna study.
 
     Raises:
-        ValueError: If model.vocab_size is None.
+        ValueError: If model.vocab_size is not set.
     """
-    if model.vocab_size is None:
+    if not model.vocab_size:
         raise ValueError("Vocab size is not set for the current model")
 
     models = get_config(model.cfg_path, "models")

@@ -7,7 +7,7 @@ This project implements four text generation language models using PyTorch:
 - **GRU model** — a gated recurrent unit network for efficient sequence modeling with fewer parameters than LSTM
 - **Transformer model** — inference-only; uses a pre-built transformer for high-quality text generation (training not yet supported)
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage: 97%, 470 stmts / 14 miss**).
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage: 98%, 522 stmts / 10 miss**).
 
 ## Table of Contents
 
@@ -36,9 +36,9 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Adam optimizer with early stopping
 - Automatic checkpoint rotation and resumption
 - Multinomial sampling for randomized generation
-- CLI interface to toggle models and behavior
-- Full unit test coverage (97%) for all major modules.
-- Tests include generation and training for all models, tuning, and visualization
+- Comprehensive CLI interface with model selection and runtime configuration
+- Full unit test coverage (98%) for all major modules
+- Tests include generation and training for all models, tuning, visualization, and CLI behavior
 - Loss visualization with matplotlib, including smoothing and saving plots
 - GPU-accelerated training by default
 - Integrated dataset library with pre-configured datasets
@@ -159,12 +159,12 @@ Example:
         "max_checkpoints": 10
       },
       "hparams": {
-        "batch_size": 40,
+        "batch_size": 32,
         "block_size": 64,
-        "lr": 0.0007923470143078948,
-        "embedding_dim": 48,
-        "hidden_size": 256,
-        "num_layers": 1
+        "lr": 0.0015,
+        "embedding_dim": 64,
+        "hidden_size": 128,
+        "num_layers": 2
       }
     },
     "transformer": {
@@ -243,20 +243,48 @@ Automatic hyperparameter tuning is supported via [Optuna](https://optuna.org/).
 
 ## Usage
 
+### Command Line Interface
+
+The project provides a flexible CLI for controlling model behavior:
+
+```bash
+# Basic usage with default model (transformer)
+python main.py
+
+# Select a specific model
+python main.py --model [bigram | lstm | gru | transformer]
+
+# Training configuration
+python main.py --model lstm --training true --steps 1000 --interval 100
+
+# Generation configuration
+python main.py --model gru --training false --max-new-tokens 200
+
+# Checkpoint management
+python main.py --model lstm --max-checkpoints 5
+```
+
+#### Available CLI arguments:
+
+- `--model`: Select model type (default: transformer)
+- `--training`: Toggle training mode (true/false)
+- `--steps`: Number of training steps
+- `--interval`: Validation interval during training
+- `--patience`: Early stopping patience
+- `--max-new-tokens`: Maximum tokens to generate
+- `--max-checkpoints`: Maximum checkpoints to keep
+
+#### Notes
+
+- The model argument will default to `--model transformer` if omitted.
+- Any runtime arguments omitted will default to the respective value defined in `config.json`.
+- Boolean flags support flexible input: `true`, `false`, `on`, `off`, `yes`, `no`, `1`, `0`.
+
 ### Train a model
 
 ```bash
 # Train the Bigram model
-python main.py --model bigram
-
-# Train the LSTM model
-python main.py --model lstm
-
-# Train the GRU model
-python main.py --model gru
-
-# Use the Transformer model (inference only)
-python main.py --model transformer
+python main.py --model bigram --training true
 ```
 
 ### Generate text
@@ -371,7 +399,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
   ```
 - Test output will show which tests passed or failed, and coverage will report which lines are tested.
 - Coverage includes data processing, plotting, model logic, CLI argument parsing, tuning, and more.
-- Current unit test coverage is 97% (470 stmts / 14 miss).
+- Current unit test coverage is 98% (522 stmts / 10 miss).
 
 ## Future Improvements
 

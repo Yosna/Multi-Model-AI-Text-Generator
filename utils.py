@@ -15,6 +15,7 @@ import os
 import shutil
 import json
 import time
+import re
 from typing import TypeVar, Any, cast
 
 T = TypeVar("T")
@@ -141,6 +142,28 @@ def get_metadata(path: str, key: str, default: T) -> T:
     return data
 
 
+def save_config(config: dict[str, Any], cfg_path: str) -> None:
+    """
+    Save a configuration dictionary to a JSON file with formatted arrays.
+
+    Args:
+        config (dict[str, Any]): The configuration dictionary to save
+        cfg_path (str): Path where the configuration file should be saved
+    """
+    cfg_str = json.dumps(config, indent=2)
+
+    def fix_arrays(match):
+        # Extract only the numbers from the array content
+        numbers = re.findall(r"\d+", match.group(1))
+        return "[" + ", ".join(numbers) + "]"
+
+    # Collapse arrays to a single line
+    cfg_str = re.sub(r"\[(.*?)\]", fix_arrays, cfg_str, flags=re.DOTALL)
+
+    with open(cfg_path, "w") as f:
+        f.write(f"{cfg_str}\n")
+
+
 def load_config(path: str) -> dict[str, Any]:
     """
     Load the entire config.json as a dict.
@@ -167,12 +190,15 @@ def get_config(path: str, config_name: str) -> dict[str, Any]:
         dict[str, Any]: The configuration dictionary for the model.
 
     Raises:
-        ValueError: If no config is found for the given name.
+        KeyError: If no config is found for the given name.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        config = json.load(f)[config_name]
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            config = json.load(f)[config_name]
+    except KeyError:
+        raise KeyError(f"No config found for: {config_name}")
     if config is None:
-        raise ValueError(f"No config found for: {config_name}")
+        raise ValueError(f"No value found for config: {config_name}")
     return config
 
 

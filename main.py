@@ -17,31 +17,13 @@ from utils import (
     encode_data,
     get_model,
 )
+from cli import parse_args, parse_config
 from tuning import optimize_and_train
 from library import get_dataset
 from typing import Any
 
 
-def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments for model selection.
-
-    Returns:
-        argparse.Namespace: Parsed arguments with model selection.
-    """
-    parser = argparse.ArgumentParser(description="Run a language model")
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="transformer",
-        choices=["bigram", "lstm", "gru", "transformer"],
-        metavar="[bigram|lstm|gru|transformer]",
-        help="Model name to use from config.json",
-    )
-    return parser.parse_args()
-
-
-def main(args: argparse.Namespace, cfg_path: str) -> None:
+def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
     """
     Prepare data, initialize model, and run training or generation.
 
@@ -49,6 +31,8 @@ def main(args: argparse.Namespace, cfg_path: str) -> None:
         args (argparse.Namespace): Parsed command-line arguments.
         cfg_path (str): Path to the configuration file.
     """
+    parse_config(args, cfg_path)
+
     model_name = args.model.lower()
     datasets = get_config(cfg_path, "datasets")
     text = get_dataset(datasets["source"], datasets["locations"])
@@ -120,4 +104,4 @@ def run_model(
 
 
 if __name__ == "__main__":
-    main(parse_args(), "config.json")
+    main(parse_args())

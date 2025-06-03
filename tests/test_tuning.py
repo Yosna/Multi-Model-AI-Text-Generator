@@ -100,3 +100,23 @@ def test_make_objective(tmp_path):
     objective = make_objective(model, data)
     assert objective is not None
     assert callable(objective)
+
+
+def test_make_objective_error(tmp_path):
+    build_file(tmp_path, "config.json", json.dumps(get_test_config()))
+    model = MockModel(str(tmp_path))
+    data = torch.tensor([i for i in range(100)])
+    error_from_zero_triggered = False
+    error_from_none_triggered = False
+    try:
+        model.vocab_size = 0
+        make_objective(model, data)
+    except ValueError:
+        error_from_zero_triggered = True
+    try:
+        model.vocab_size = None
+        make_objective(model, data)
+    except ValueError:
+        error_from_none_triggered = True
+    assert error_from_zero_triggered
+    assert error_from_none_triggered

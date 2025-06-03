@@ -109,39 +109,6 @@ def build_file(tmp_path, file_name, content):
     return file
 
 
-def test_parse_args():
-    cli_args = ["main.py"]
-    with patch.object(sys, "argv", cli_args):
-        args = parse_args()
-        assert args is not None
-
-
-def test_parse_args_default_model():
-    cli_args = ["main.py"]
-    default_model = "transformer"
-    with patch.object(sys, "argv", cli_args):
-        args = parse_args()
-        assert args.model == default_model
-
-
-@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
-def test_parse_args_model(model):
-    cli_args = ["main.py", "--model", model]
-    with patch.object(sys, "argv", cli_args):
-        args = parse_args()
-        assert args.model == model
-
-
-@pytest.mark.parametrize("invalid", ["test", "", None])
-def test_parse_args_invalid(invalid):
-    cli_args = ["main.py", "--model", invalid]
-    with patch.object(sys, "argv", cli_args):
-        try:
-            parse_args()
-        except SystemExit as e:
-            assert e.code == 2
-
-
 @pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
 def test_main(tmp_path, model):
     main_ran_successfully = False
