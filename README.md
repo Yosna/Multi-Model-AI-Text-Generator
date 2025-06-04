@@ -7,7 +7,7 @@ This project implements four text generation language models using PyTorch:
 - **GRU model** — a gated recurrent unit network for efficient sequence modeling with fewer parameters than LSTM
 - **Transformer model** — inference-only; uses a pre-built transformer for high-quality text generation (training not yet supported)
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage: 98%, 522 stmts / 10 miss**).
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage: 98%, 544 stmts / 10 miss**).
 
 ## Table of Contents
 
@@ -36,9 +36,9 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Adam optimizer with early stopping
 - Automatic checkpoint rotation and resumption
 - Multinomial sampling for randomized generation
-- Comprehensive CLI interface with model selection and runtime configuration
+- Comprehensive CLI interface with model selection, runtime, and hyperparameter configuration
 - Full unit test coverage (98%) for all major modules
-- Tests include generation and training for all models, tuning, visualization, and CLI behavior
+- Tests include generation and training for all models, tuning, visualization, CLI behavior, and argument parsing helpers
 - Loss visualization with matplotlib, including smoothing and saving plots
 - GPU-accelerated training by default
 - Integrated dataset library with pre-configured datasets
@@ -273,6 +273,12 @@ python main.py --model lstm --max-checkpoints 5
 - `--patience`: Early stopping patience
 - `--max-new-tokens`: Maximum tokens to generate
 - `--max-checkpoints`: Maximum checkpoints to keep
+- `--batch-size`: Override batch size for training
+- `--block-size`: Override context window size
+- `--lr`: Override learning rate
+- `--embedding-dim`: Override embedding dimension size
+- `--hidden-size`: Override hidden layer size
+- `--num-layers`: Override number of model layers
 
 #### Notes
 
@@ -399,7 +405,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
   ```
 - Test output will show which tests passed or failed, and coverage will report which lines are tested.
 - Coverage includes data processing, plotting, model logic, CLI argument parsing, tuning, and more.
-- Current unit test coverage is 98% (522 stmts / 10 miss).
+- Current unit test coverage is 98% (544 stmts / 10 miss).
 
 ## Future Improvements
 
