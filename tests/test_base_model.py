@@ -30,17 +30,16 @@ class BaseLanguageModel(Model.BaseLM):
         super().__init__(model_name, config, cfg_path, vocab_size)
         self.embedding = nn.Embedding(vocab_size, vocab_size)
 
-    def forward(self, idx, targets):
+    def forward(self, idx):
         logits = self.embedding(idx)
-        logits, loss = self.compute_loss(idx, logits, targets)
-        return logits, loss
+        return logits
 
     def generate(self, start_idx, max_new_tokens):
         self.eval()
         idx = torch.tensor([[start_idx]], dtype=torch.long, device=self.device)
         generated = torch.tensor([start_idx], dtype=torch.long, device=self.device)
         for _ in range(max_new_tokens):
-            logits, _ = self(idx)
+            logits = self(idx)
             next_idx = self.new_token(logits)
             generated = torch.cat((generated, next_idx), dim=0)
         return generated
@@ -78,8 +77,7 @@ def test_base_model_compute_loss():
     idx = torch.tensor([[1, 2, 3, 4, 5]])
     logits = torch.tensor([0.1, 0.2, 0.3, 0.4, 0.5]).repeat(1, 10, 1)
     targets = torch.tensor([[2, 3, 4, 5, 6]])
-    logits, loss = model.compute_loss(idx, logits, targets)
-    assert logits.shape == torch.Size([5, 10])
+    loss = model.compute_loss(logits, idx, targets)
     assert loss is not None
     assert loss > 0
 

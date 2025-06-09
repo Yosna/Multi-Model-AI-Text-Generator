@@ -27,7 +27,7 @@ def get_gru_config():
 def get_gru_model():
     return Model.GRULM(
         config=get_gru_config(),
-        cfg_path="config.json",
+        cfg_path="test_config.json",
         vocab_size=5,
     )
 
@@ -40,11 +40,7 @@ def test_gru_model():
 def test_gru_model_no_vocab():
     model_not_initialized = False
     try:
-        Model.GRULM(
-            config=get_gru_config(),
-            cfg_path="config.json",
-            vocab_size=0,
-        )
+        Model.GRULM(config=get_gru_config(), cfg_path="test_config.json", vocab_size=0)
     except ValueError:
         model_not_initialized = True
     assert model_not_initialized
@@ -98,13 +94,11 @@ def test_gru_model_repr():
 def test_gru_model_forward():
     model = get_gru_model()
     idx = torch.tensor([[0, 1, 2, 3, 4]])
-    targets = torch.tensor([1, 2, 3, 4, 0])
-    logits, loss, hidden = model(idx, targets)
-    assert logits.shape == torch.Size([5, 5])
-    assert loss > 0
-    assert isinstance(hidden, torch.Tensor)
-    assert len(hidden) == 1
-    assert hidden.shape == torch.Size([1, 1, 8])
+    logits = model(idx)
+    assert logits.shape == torch.Size([1, 5, 5])
+    assert isinstance(model.hidden, torch.Tensor)
+    assert len(model.hidden) == 1
+    assert model.hidden.shape == torch.Size([1, 1, 8])
 
 
 def test_gru_model_generate():

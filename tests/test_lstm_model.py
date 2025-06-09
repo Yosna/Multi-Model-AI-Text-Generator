@@ -27,7 +27,7 @@ def get_lstm_config():
 def get_lstm_model():
     return Model.LSTMLM(
         config=get_lstm_config(),
-        cfg_path="config.json",
+        cfg_path="test_config.json",
         vocab_size=5,
     )
 
@@ -41,9 +41,7 @@ def test_lstm_model_no_vocab():
     model_not_initialized = False
     try:
         Model.LSTMLM(
-            config=get_lstm_config(),
-            cfg_path="config.json",
-            vocab_size=0,
+            config=get_lstm_config(), cfg_path="test_config.json", vocab_size=0
         )
     except ValueError:
         model_not_initialized = True
@@ -98,14 +96,12 @@ def test_lstm_model_repr():
 def test_lstm_model_forward():
     model = get_lstm_model()
     idx = torch.tensor([[0, 1, 2, 3, 4]])
-    targets = torch.tensor([1, 2, 3, 4, 0])
-    logits, loss, hidden = model(idx, targets)
-    assert logits.shape == torch.Size([5, 5])
-    assert loss > 0
-    assert isinstance(hidden, tuple)
-    assert len(hidden) == 2
-    assert hidden[0].shape == torch.Size([1, 1, 8])
-    assert hidden[1].shape == torch.Size([1, 1, 8])
+    logits = model(idx)
+    assert logits.shape == torch.Size([1, 5, 5])
+    assert isinstance(model.hidden, tuple)
+    assert len(model.hidden) == 2
+    assert model.hidden[0].shape == torch.Size([1, 1, 8])
+    assert model.hidden[1].shape == torch.Size([1, 1, 8])
 
 
 def test_lstm_model_generate():

@@ -68,7 +68,7 @@ def validate_data(
     data: torch.Tensor,
     step: int,
     step_divisor: int,
-    loss: torch.Tensor,
+    loss: float,
     val_losses: list[float],
     best_loss: float,
     wait: int,
@@ -83,7 +83,7 @@ def validate_data(
         data (torch.Tensor): Validation data as a 1D tensor of encoded characters.
         step (int): Current training step.
         step_divisor (int): Step divisor for validation frequency.
-        loss (torch.Tensor): Current training loss.
+        loss (float): Current training loss.
         val_losses (list[float]): List to append validation losses to.
         best_loss (float): Best validation loss so far.
         wait (int): Number of validation steps since last improvement.
@@ -99,32 +99,30 @@ def validate_data(
         xb, yb = get_batch(model, data)
 
         with torch.no_grad():
-            _, val_loss, *_ = model(xb, yb)
-            val_losses.append(val_loss.item())
+            logits = model(xb)
+            val_loss = model.compute_loss(logits, xb, yb)
 
-            print(
-                f"Step: {step:<10}"
-                f"loss: {loss:<20.10f}"
-                f"val_loss: {val_loss.item():<20.10f}"
-            )
+        val_losses.append(val_loss.item())
 
-            save_model = get_config(model.cfg_path, "save_model")
-            full_training_run = step_divisor == 1
-            if save_model and full_training_run and (val_loss < best_loss):
-                # Save model if validation loss improves
-                best_loss = val_loss
-                wait = 0
-                save_checkpoint(model, step, val_loss.item(), model.max_checkpoints)
-            elif full_training_run:
-                wait += 1
-                if wait >= model.patience:
-                    # Try to restore best model before stopping
-                    try:
-                        model.load_state_dict(torch.load(model.ckpt_path))
-                    except Exception as e:
-                        print(f"Error restoring model: {e}")
-                    overfit = True
-                    print(f"Stopping due to overfitting.")
-                    print(f"Step: {step}, Best Loss: {best_loss}")
+        print(f"Step: {step:<10} loss: {loss:<20.10f} val_loss: {val_loss:<20.10f}")
+
+        save_model = get_config(model.cfg_path, "save_model")
+        full_training_run = step_divisor == 1
+        if save_model and full_training_run and (val_loss < best_loss):
+            # Save model if validation loss improves
+            best_loss = val_loss.item()
+            wait = 0
+            save_checkpoint(model, step, val_loss.item(), model.max_checkpoints)
+        elif full_training_run:
+            wait += 1
+            if wait >= model.patience:
+                # Try to restore best model before stopping
+                try:
+                    model.load_state_dict(torch.load(model.ckpt_path))
+                except Exception as e:
+                    print(f"Error restoring model: {e}")
+                overfit = True
+                print(f"Stopping due to overfitting.")
+                print(f"Step: {step}, Best Loss: {best_loss}")
 
     return overfit, best_loss, wait

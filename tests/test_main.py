@@ -26,7 +26,8 @@ def get_test_config(tmp_path, training=True):
                 "bigram": get_test_model(training),
                 "lstm": get_test_model(training),
                 "gru": get_test_model(training),
-                "transformer": get_test_model(training=False),
+                "transformer": get_test_model(training),
+                "distilgpt2": get_test_model(training=False),
             },
             "auto_tuning": False,
             "visualization": {
@@ -57,12 +58,15 @@ def get_test_model(training):
             "embedding_dim": 4,
             "hidden_size": 8,
             "num_layers": 1,
+            "max_seq_len": 16,
+            "num_heads": 2,
+            "ff_dim": 8,
         },
     }
 
 
 class MockModel(Model.BaseLM):
-    def __init__(self, base_dir, model_name, vocab_size=5, training=True):
+    def __init__(self, base_dir, model_name, vocab_size=100, training=True):
         config = json.loads(get_test_config(base_dir, training))["models"][model_name]
         super().__init__(
             model_name=model_name,
@@ -80,16 +84,17 @@ class MockModel(Model.BaseLM):
             setattr(self, key, value)
 
         self.device = torch.device("cpu")
-        self.embedding = nn.Embedding(vocab_size, 1)
+        self.embedding = nn.Embedding(vocab_size, vocab_size)
 
-    def forward(self, *_, **__):
-        return None, torch.tensor(1)
+    def forward(self, idx):
+        logits = self.embedding(idx)
+        return logits
 
     def train_step(self, *_, **__):
         return torch.tensor(1)
 
     def run(self, *_, **__):
-        return "Transformer output"
+        return "DistilGPT2 output"
 
     def generate(self, *_, **__):
         return "Bigram & LSTM output"
@@ -109,7 +114,9 @@ def build_file(tmp_path, file_name, content):
     return file
 
 
-@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
+@pytest.mark.parametrize(
+    "model", ["bigram", "lstm", "gru", "transformer", "distilgpt2"]
+)
 def test_main(tmp_path, model):
     main_ran_successfully = False
     cli_args = ["main.py", "--model", model]
@@ -125,7 +132,9 @@ def test_main(tmp_path, model):
     assert main_ran_successfully
 
 
-@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
+@pytest.mark.parametrize(
+    "model", ["bigram", "lstm", "gru", "transformer", "distilgpt2"]
+)
 def test_validate_model(tmp_path, model):
     validate_model_ran_successfully = False
     build_file(tmp_path, "config.json", get_test_config(tmp_path))
@@ -143,7 +152,9 @@ def test_validate_model(tmp_path, model):
     assert validate_model_ran_successfully
 
 
-@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
+@pytest.mark.parametrize(
+    "model", ["bigram", "lstm", "gru", "transformer", "distilgpt2"]
+)
 def test_run_model_training(tmp_path, model):
     run_model_ran_successfully = False
     build_file(tmp_path, "config.json", get_test_config(tmp_path))
@@ -160,7 +171,9 @@ def test_run_model_training(tmp_path, model):
     assert run_model_ran_successfully
 
 
-@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
+@pytest.mark.parametrize(
+    "model", ["bigram", "lstm", "gru", "transformer", "distilgpt2"]
+)
 def test_run_model_generation(tmp_path, model):
     run_model_ran_successfully = False
     try:

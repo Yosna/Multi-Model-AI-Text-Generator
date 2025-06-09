@@ -62,7 +62,7 @@ def validate_model(
         stoi (dict[str, int]): Character-to-index mapping.
         itos (dict[int, str]): Index-to-character mapping.
     """
-    if model.name == "transformer":
+    if model.name == "distilgpt2":
         generated_text = model.run(text)
         print(generated_text)
     else:

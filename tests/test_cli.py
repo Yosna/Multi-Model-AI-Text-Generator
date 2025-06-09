@@ -69,7 +69,9 @@ def test_parse_args_default_model():
         assert args.model == default_model
 
 
-@pytest.mark.parametrize("model", ["bigram", "lstm", "gru", "transformer"])
+@pytest.mark.parametrize(
+    "model", ["bigram", "lstm", "gru", "transformer", "distilgpt2"]
+)
 def test_parse_args_model(model):
     cli_args = ["main.py", "--model", model]
     with patch.object(sys, "argv", cli_args):
@@ -116,6 +118,9 @@ def test_parse_args_hparams():
         *["--embedding-dim", "10"],
         *["--hidden-size", "10"],
         *["--num-layers", "10"],
+        *["--max-seq-len", "10"],
+        *["--num-heads", "10"],
+        *["--ff-dim", "10"],
     ]
     with patch.object(sys, "argv", cli_args):
         args = parse_args()
@@ -125,3 +130,6 @@ def test_parse_args_hparams():
         assert args.embedding_dim == 10
         assert args.hidden_size == 10
         assert args.num_layers == 10
+        assert args.max_seq_len == 10
+        assert args.num_heads == 10
+        assert args.ff_dim == 10

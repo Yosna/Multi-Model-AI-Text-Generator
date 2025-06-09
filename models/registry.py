@@ -3,6 +3,7 @@ from models.bigram_model import BigramLanguageModel
 from models.lstm_model import LSTMLanguageModel
 from models.gru_model import GRULanguageModel
 from models.transformer_model import TransformerLanguageModel
+from models.distilgpt2_model import DistilGPT2LanguageModel
 
 
 class ModelRegistry:
@@ -13,3 +14,4 @@ class ModelRegistry:
     LSTMLM = LSTMLanguageModel
     GRULM = GRULanguageModel
     TransformerLM = TransformerLanguageModel
+    DistilGPT2LM = DistilGPT2LanguageModel

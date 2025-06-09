@@ -67,10 +67,10 @@ class MockModel(Model.BaseLM):
             setattr(self, key, value)
 
         self.device = torch.device("cpu")
-        self.embedding = nn.Embedding(10, 10)
+        self.embedding = nn.Embedding(100, 100)
 
-    def forward(self, *_, **__):
-        return None, torch.tensor(1)
+    def forward(self, idx):
+        return self.embedding(idx)
 
     def train_step(self, *_, **__):
         return torch.tensor(1)
@@ -89,8 +89,8 @@ def test_optimize_and_train(tmp_path):
     losses, val_losses = optimize_and_train(model, data, n_trials=1)
     assert len(losses) > 0
     assert len(val_losses) > 0
-    assert losses[0] == 1
-    assert val_losses[0] == 1
+    assert losses[0] > 0
+    assert val_losses[0] > 0
 
 
 def test_make_objective(tmp_path):

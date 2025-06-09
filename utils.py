@@ -144,7 +144,9 @@ def get_metadata(path: str, key: str, default: T) -> T:
 
 def save_config(config: dict[str, Any], cfg_path: str) -> None:
     """
-    Save a configuration dictionary to a JSON file with formatted arrays.
+    Save a configuration dictionary to a JSON file.
+    Formats arrays to remove line breaks
+    Adds line breaks between top-level sections that end with '},'.
 
     Args:
         config (dict[str, Any]): The configuration dictionary to save
@@ -160,8 +162,19 @@ def save_config(config: dict[str, Any], cfg_path: str) -> None:
     # Collapse arrays to a single line
     cfg_str = re.sub(r"\[(.*?)\]", fix_arrays, cfg_str, flags=re.DOTALL)
 
+    cfg_lines = cfg_str.split("\n")
+    cfg_format = []
+
+    for i, line in enumerate(cfg_lines):
+        cfg_format.append(line)
+        # Add a line break after top-level sections that end with '},'
+        if line == "  }," and i < len(cfg_lines) - 1:
+            cfg_format.append("")
+
+    cfg_str = "\n".join(cfg_format) + "\n"
+
     with open(cfg_path, "w") as f:
-        f.write(f"{cfg_str}\n")
+        f.write(cfg_str)
 
 
 def load_config(path: str) -> dict[str, Any]:
@@ -232,7 +245,9 @@ def get_model(
     elif model_name == "gru":
         model = models.GRULM(config[model_name], cfg_path, vocab_size)
     elif model_name == "transformer":
-        model = models.TransformerLM(config[model_name], cfg_path)
+        model = models.TransformerLM(config[model_name], cfg_path, vocab_size)
+    elif model_name == "distilgpt2":
+        model = models.DistilGPT2LM(config[model_name], cfg_path)
     else:
         raise ValueError(f"Unknown model type: {model_name}")
     model.to(model.device)

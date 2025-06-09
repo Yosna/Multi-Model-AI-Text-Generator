@@ -125,8 +125,8 @@ def parse_model(parser: argparse.ArgumentParser) -> None:
         "--model",
         type=str,
         default="transformer",
-        choices=["bigram", "lstm", "gru", "transformer"],
-        metavar="[bigram | lstm | gru | transformer]",
+        choices=["bigram", "lstm", "gru", "transformer", "distilgpt2"],
+        metavar="[bigram | lstm | gru | transformer | distilgpt2]",
         help="Model name to use from config (section: models)",
     )
 
@@ -173,6 +173,9 @@ def parse_hparams(parser: argparse.ArgumentParser) -> None:
     - Embedding dimension size (embedding_dim)
     - Hidden layer size (hidden_size)
     - Number of model layers (num_layers)
+    - Maximum sequence length (max_seq_len)
+    - Number of attention heads (num_heads)
+    - Feedforward dimension (ff_dim)
 
     Args:
         parser (argparse.ArgumentParser): The argument parser for hyperparameters
@@ -183,6 +186,9 @@ def parse_hparams(parser: argparse.ArgumentParser) -> None:
     embedding_dim_help = "Override embedding_dim in config (section: hparams)"
     hidden_size_help = "Override hidden_size in config (section: hparams)"
     num_layers_help = "Override num_layers in config (section: hparams)"
+    max_seq_len_help = "Override max_seq_len in config (section: hparams)"
+    num_heads_help = "Override num_heads in config (section: hparams)"
+    ff_dim_help = "Override ff_dim in config (section: hparams)"
 
     add_arg(parser, "--batch-size", int, "[int]", batch_size_help)
     add_arg(parser, "--block-size", int, "[int]", block_size_help)
@@ -190,3 +196,6 @@ def parse_hparams(parser: argparse.ArgumentParser) -> None:
     add_arg(parser, "--embedding-dim", int, "[int]", embedding_dim_help)
     add_arg(parser, "--hidden-size", int, "[int]", hidden_size_help)
     add_arg(parser, "--num-layers", int, "[int]", num_layers_help)
+    add_arg(parser, "--max-seq-len", int, "[int]", max_seq_len_help)
+    add_arg(parser, "--num-heads", int, "[int]", num_heads_help)
+    add_arg(parser, "--ff-dim", int, "[int]", ff_dim_help)

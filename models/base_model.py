@@ -81,7 +81,7 @@ class BaseLanguageModel(nn.Module):
 
     def train_step(
         self, xb: torch.Tensor, yb: torch.Tensor, optimizer: torch.optim.Optimizer
-    ) -> torch.Tensor:
+    ) -> float:
         """
         Perform a single training step for the model.
 
@@ -91,9 +91,10 @@ class BaseLanguageModel(nn.Module):
             optimizer (torch.optim.Optimizer): Optimizer to update model parameters.
 
         Returns:
-            torch.Tensor: The loss value for the current training step.
+            float: The loss value for the current training step.
         """
-        _, loss, *_ = self(xb, yb)
+        logits = self(xb)
+        loss = self.compute_loss(logits, xb, yb)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -101,34 +102,30 @@ class BaseLanguageModel(nn.Module):
 
     def compute_loss(
         self,
-        idx: torch.Tensor,
         logits: torch.Tensor,
-        targets: torch.Tensor | None = None,
-        loss: torch.Tensor | None = None,
-    ):
+        idx: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Compute the cross entropy loss between model predictions and targets.
 
         Args:
-            idx (torch.Tensor): Input token indices of shape (B, T)
             logits (torch.Tensor): Model predictions of shape (B, T, C)
-            targets (torch.Tensor, optional): Target token indices of shape (B, T)
-            loss (torch.Tensor, optional): Pre-computed loss tensor
+            idx (torch.Tensor): Input token indices of shape (B, T)
+            targets (torch.Tensor): Target token indices of shape (B, T)
 
         Returns:
-            tuple: (logits, loss) where loss is None if no targets are provided
+            torch.Tensor: Cross entropy loss between predictions and targets
         """
         B, T = idx.shape
 
-        if targets is not None:
-            # Reshape for cross entropy: (B,T,C) -> (B*T,C)
-            # This flattens the batch and sequence dimensions
-            # A single prediction per token is received
-            logits = logits.view(B * T, -1)
-            targets = targets.view(B * T)
-            loss = F.cross_entropy(logits, targets)
-
-        return logits, loss
+        # Reshape for cross entropy: (B,T,C) -> (B*T,C)
+        # This flattens the batch and sequence dimensions
+        # A single prediction per token is received
+        logits = logits.view(B * T, -1)
+        targets = targets.view(B * T)
+        loss = F.cross_entropy(logits, targets)
+        return loss
 
     def new_token(self, logits: torch.Tensor) -> torch.Tensor:
         """
@@ -149,7 +146,6 @@ class BaseLanguageModel(nn.Module):
         probs = F.softmax(logits, dim=-1)
         # Sample from the probability distribution
         next_idx = torch.multinomial(probs, num_samples=1)
-
         return next_idx
 
     def generate(self, *_, **__):

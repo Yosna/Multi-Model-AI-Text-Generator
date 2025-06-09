@@ -53,6 +53,9 @@ class BigramLanguageModel(BaseLanguageModel):
         for key, value in config.get("hparams", {}).items():
             setattr(self, key, value)
 
+        if not self.vocab_size:
+            raise ValueError("Vocab size is not set for Bigram model")
+
         # Each character gets a vector of size vocab_size
         # Character predictions are learned via probability distribution
         self.embedding = nn.Embedding(vocab_size, vocab_size)
@@ -65,26 +68,19 @@ class BigramLanguageModel(BaseLanguageModel):
         output = f"BigramLanguageModel(\n\tvocab_size={self.vocab_size}\n)"
         return output.expandtabs(4)
 
-    def forward(
-        self, idx: torch.Tensor, targets: torch.Tensor | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+    def forward(self, idx: torch.Tensor) -> torch.Tensor:
         """
-        Compute logits and loss for input indices and targets.
+        Compute logits for input indices.
 
         Args:
             idx (torch.Tensor): Input token indices of shape (B, T).
-            targets (torch.Tensor, optional): Target token indices of shape (B, T).
 
         Returns:
-            tuple: (logits, loss) where:
-                - logits: Model predictions of shape (B, T, vocab_size)
-                - loss: Cross entropy loss if targets provided, None otherwise
+            torch.Tensor: Model predictions of shape (B, T, vocab_size)
         """
         # (B, T, vocab_size): map indices to logits for next character prediction
         logits = self.embedding(idx)
-        logits, loss = self.compute_loss(idx, logits, targets)
-
-        return logits, loss
+        return logits
 
     @torch.no_grad()
     def generate(
@@ -111,7 +107,7 @@ class BigramLanguageModel(BaseLanguageModel):
 
         for _ in range(self.max_new_tokens):
             # Get predictions for next step
-            logits, _ = self(idx)
+            logits = self(idx)
             next_idx = self.new_token(logits)
             generated = torch.cat((generated, next_idx.flatten()), dim=0)
 

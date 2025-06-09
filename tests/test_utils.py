@@ -46,7 +46,7 @@ def get_test_config():
             "bigram": get_models_config(),
             "lstm": get_models_config(),
             "gru": get_models_config(),
-            "transformer": get_models_config(),
+            "distilgpt2": get_models_config(),
         },
         "auto_tuning": False,
         "visualization": {
@@ -172,11 +172,11 @@ def test_get_model():
     bigram = get_model(Model, "bigram", config, "config.json", 10)
     lstm = get_model(Model, "lstm", config, "config.json", 10)
     gru = get_model(Model, "gru", config, "config.json", 10)
-    transformer = get_model(Model, "transformer", config, "config.json", 10)
+    distilgpt2 = get_model(Model, "distilgpt2", config, "config.json", 10)
     assert bigram.__class__.__name__ == "BigramLanguageModel"
     assert lstm.__class__.__name__ == "LSTMLanguageModel"
     assert gru.__class__.__name__ == "GRULanguageModel"
-    assert transformer.__class__.__name__ == "TransformerLanguageModel"
+    assert distilgpt2.__class__.__name__ == "DistilGPT2LanguageModel"
 
 
 def test_get_model_error():

@@ -61,6 +61,9 @@ class GRULanguageModel(BaseLanguageModel):
         for key, value in config.get("hparams", {}).items():
             setattr(self, key, value)
 
+        # Initialize the hidden state
+        self.hidden = None
+
         # Each character gets a vector of size embedding_dim
         self.embedding = nn.Embedding(vocab_size, self.embedding_dim)
         # GRU layers process the embedded sequences
@@ -70,9 +73,11 @@ class GRULanguageModel(BaseLanguageModel):
             num_layers=self.num_layers,
             batch_first=True,
         )
-        # Final layer projects GRU output back to vocabulary size
+
         if not self.vocab_size:
             raise ValueError("Vocab size is not set for GRU model")
+
+        # Final layer projects GRU output back to vocabulary size
         self.fc = nn.Linear(self.hidden_size, self.vocab_size)
 
     def __repr__(self) -> str:
@@ -90,48 +95,28 @@ class GRULanguageModel(BaseLanguageModel):
         )
         return output.expandtabs(4)
 
-    def forward(
-        self,
-        idx: torch.Tensor,
-        targets: torch.Tensor | None = None,
-        hidden: torch.Tensor | None = None,
-    ) -> tuple[
-        torch.Tensor | None,
-        torch.Tensor | None,
-        torch.Tensor | None,
-    ]:
+    def forward(self, idx: torch.Tensor) -> torch.Tensor:
         """
-        Compute logits and loss for input indices and targets.
-        Also returns the hidden state for use in generation.
+        Compute logits for input indices using GRU.
+        Updates the internal hidden state for use in generation.
 
         Args:
             idx (torch.Tensor): Input token indices of shape (B, T).
-            targets (torch.Tensor, optional): Target token indices of shape (B, T).
-            hidden (torch.Tensor, optional): GRU hidden state (h_n).
 
         Returns:
-            tuple: (logits, loss, hidden) where:
-                - logits: Model predictions of shape (B, T, vocab_size)
-                - loss: Cross entropy loss if targets provided, None otherwise
-                - hidden: Updated GRU hidden state
+            torch.Tensor: Model predictions of shape (B, T, vocab_size)
         """
         # (B, T, embedding_dim): map indices to embeddings
         x = self.embedding(idx)
         # (B, T, hidden_size): process sequence with GRU
-        out, hidden = self.gru(x, hidden)
+        out, self.hidden = self.gru(x, self.hidden)
         # (B, T, vocab_size): project to vocabulary size
         logits = self.fc(out)
 
-        logits, loss = self.compute_loss(idx, logits, targets)
-
-        return logits, loss, hidden
+        return logits
 
     @torch.no_grad()
-    def generate(
-        self,
-        start_idx: int,
-        itos: dict[int, str],
-    ) -> str:
+    def generate(self, start_idx: int, itos: dict[int, str]) -> str:
         """
         Generate new text by sampling from the model's predictions.
         Uses multinomial sampling to add randomness to the output.
@@ -150,14 +135,18 @@ class GRULanguageModel(BaseLanguageModel):
         self.eval()
         idx = torch.tensor([[start_idx]], dtype=torch.long, device=self.device)
         generated = torch.tensor([start_idx], dtype=torch.long, device=self.device)
-        hidden = None
 
         for _ in range(self.max_new_tokens):
-            # Get predictions and update hidden state for next step:
-            logits, _, hidden = self(idx, hidden=hidden)
+            # Get predictions and update hidden state for next step
+            logits = self(idx)
             next_idx = self.new_token(logits)
             # Prepare input for next iteration
             idx = next_idx
             generated = torch.cat((generated, next_idx.flatten()), dim=0)
 
         return decode_data(generated, itos)
+
+    def train_step(self, *args, **kwargs):
+        """Reset hidden state at the start of each training step"""
+        self.hidden = None
+        return super().train_step(*args, **kwargs)

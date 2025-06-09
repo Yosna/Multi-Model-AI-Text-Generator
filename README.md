@@ -1,13 +1,14 @@
 # Text Generation Language Models in PyTorch
 
-This project implements four text generation language models using PyTorch:
+This project implements five text generation language models using PyTorch:
 
 - **Bigram model** — a simple neural network that learns character-to-character transition probabilities
 - **LSTM model** — a recurrent neural network capable of learning longer-range character sequences using memory and context
 - **GRU model** — a gated recurrent unit network for efficient sequence modeling with fewer parameters than LSTM
-- **Transformer model** — inference-only; uses a pre-built transformer for high-quality text generation (training not yet supported)
+- **Transformer model** — a trainable transformer supporting both training and generation
+- **DistilGPT2 model** — inference-only; uses a pre-trained Hugging Face transformer for high-quality text generation
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage: 98%, 544 stmts / 10 miss**).
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage**: 98%).
 
 ## Table of Contents
 
@@ -30,7 +31,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 
 - Character-level tokenization across multiple input files
 - Dynamic vocabulary and index mapping
-- Modular model registry for Bigram, LSTM, GRU, and Transformer (inference-only)
+- Modular model registry for Bigram, LSTM, GRU, Transformer, and DistilGPT2 (inference-only)
 - Configurable training and hyperparameter tuning via `config.json`
 - Automatic hyperparameter tuning with Optuna
 - Adam optimizer with early stopping
@@ -60,11 +61,15 @@ A gated recurrent unit network that efficiently models sequences with fewer para
 
 ### Transformer Model
 
-Integration with a pre-built transformer model that uses self-attention mechanisms for sophisticated text generation. **Currently supports inference only** (cannot be trained or fine-tuned yet).
+A trainable transformer model using self-attention mechanisms for sophisticated text generation. Supports both training and generation. Architecture includes token and position embeddings, multi-head attention, feedforward layers, and stacking of encoder layers.
+
+### DistilGPT2 Model
+
+Integration with a pre-trained Hugging Face DistilGPT2 model for high-quality text generation. **Inference-only** (cannot be trained or fine-tuned).
 
 ## Datasets
 
-The project supports three types of datasets:
+Three types of datasets are supported:
 
 ### Local Dataset
 
@@ -92,7 +97,9 @@ You can use any dataset from the Hugging Face Hub by specifying the dataset name
 ## Configuration
 
 All behavior is driven by a single `config.json` file.
-Example:
+
+<details>
+<summary><b>Example</b> <code>config.json</code> (<i>click to expand</i>)</summary>
 
 ```json
 {
@@ -114,6 +121,7 @@ Example:
       }
     }
   },
+
   "save_model": true,
   "models": {
     "bigram": {
@@ -122,7 +130,7 @@ Example:
         "steps": 10000,
         "interval": 100,
         "patience": 10,
-        "max_new_tokens": 100,
+        "max_new_tokens": 128,
         "max_checkpoints": 10
       },
       "hparams": {
@@ -137,7 +145,7 @@ Example:
         "steps": 50000,
         "interval": 500,
         "patience": 10,
-        "max_new_tokens": 200,
+        "max_new_tokens": 256,
         "max_checkpoints": 10
       },
       "hparams": {
@@ -155,7 +163,7 @@ Example:
         "steps": 50000,
         "interval": 500,
         "patience": 10,
-        "max_new_tokens": 200,
+        "max_new_tokens": 256,
         "max_checkpoints": 10
       },
       "hparams": {
@@ -169,6 +177,26 @@ Example:
     },
     "transformer": {
       "runtime": {
+        "training": true,
+        "steps": 100000,
+        "interval": 1000,
+        "patience": 10,
+        "max_new_tokens": 256,
+        "max_checkpoints": 10
+      },
+      "hparams": {
+        "batch_size": 32,
+        "block_size": 128,
+        "lr": 0.001,
+        "embedding_dim": 64,
+        "max_seq_len": 128,
+        "num_heads": 4,
+        "ff_dim": 256,
+        "num_layers": 3
+      }
+    },
+    "distilgpt2": {
+      "runtime": {
         "max_new_tokens": 256
       },
       "hparams": {
@@ -176,44 +204,64 @@ Example:
       }
     }
   },
+
   "auto_tuning": true,
   "save_tuning": true,
   "tuning_ranges": {
     "batch_size": {
       "type": "int",
-      "min": 8,
+      "min": 16,
       "max": 128,
-      "step": 8
+      "step": 16
     },
     "block_size": {
       "type": "int",
-      "min": 16,
+      "min": 32,
       "max": 256,
-      "step": 16
+      "step": 32
     },
     "lr": {
       "type": "float",
       "min": 0.0001,
-      "max": 0.1,
+      "max": 0.01,
       "log": true
     },
     "embedding_dim": {
       "type": "int",
-      "min": 8,
+      "min": 16,
       "max": 128,
-      "step": 8
+      "step": 16
     },
     "hidden_size": {
       "type": "int",
-      "min": 16,
+      "min": 32,
       "max": 256,
-      "step": 16
+      "step": 32
     },
     "num_layers": {
       "type": "categorical",
-      "values": [1, 2, 3]
+      "values": [1, 2, 3, 4]
+    },
+    "max_seq_len": {
+      "type": "int",
+      "min": 32,
+      "max": 256,
+      "step": 32
+    },
+    "num_heads": {
+      "type": "int",
+      "min": 2,
+      "max": 8,
+      "step": 2
+    },
+    "ff_dim": {
+      "type": "int",
+      "min": 32,
+      "max": 256,
+      "step": 32
     }
   },
+
   "visualization": {
     "show_plot": true,
     "smooth_loss": true,
@@ -223,6 +271,8 @@ Example:
   }
 }
 ```
+
+</details><br>
 
 You can configure:
 
@@ -240,6 +290,7 @@ Automatic hyperparameter tuning is supported via [Optuna](https://optuna.org/).
 - Define search spaces in the `"tuning_ranges"` section (supports `int`, `float`, and `categorical` types).
 - Tuning is integrated into the training workflow and can be controlled via the CLI or config.
 - Results are saved and can be used to update model hyperparameters automatically if `"save_tuning": true`.
+- Tunable fields include: `batch_size`, `block_size`, `lr`, `embedding_dim`, `hidden_size`, `num_layers`, `max_seq_len`, `num_heads`, `ff_dim`.
 
 ## Usage
 
@@ -252,7 +303,7 @@ The project provides a flexible CLI for controlling model behavior:
 python main.py
 
 # Select a specific model
-python main.py --model [bigram | lstm | gru | transformer]
+python main.py --model [bigram | lstm | gru | transformer | distilgpt2]
 
 # Training configuration
 python main.py --model lstm --training true --steps 1000 --interval 100
@@ -266,31 +317,37 @@ python main.py --model lstm --max-checkpoints 5
 
 #### Available CLI arguments:
 
-- `--model`: Select model type (default: transformer)
-- `--training`: Toggle training mode (true/false)
-- `--steps`: Number of training steps
-- `--interval`: Validation interval during training
-- `--patience`: Early stopping patience
-- `--max-new-tokens`: Maximum tokens to generate
-- `--max-checkpoints`: Maximum checkpoints to keep
-- `--batch-size`: Override batch size for training
-- `--block-size`: Override context window size
-- `--lr`: Override learning rate
-- `--embedding-dim`: Override embedding dimension size
-- `--hidden-size`: Override hidden layer size
-- `--num-layers`: Override number of model layers
+_\*arg for all models, \*\*arg for all models excluding distilgpt2_
+
+- `--model`: Select model type (**default**: transformer, **options**: [bigram | lstm | gru | transformer | distilgpt2])
+- `--training`: Toggle training mode (**options**: [true | false]) \*\*
+- `--steps`: Number of training steps \*\*
+- `--interval`: Validation interval during training \*\*
+- `--patience`: Early stopping patience \*\*
+- `--max-new-tokens`: Maximum tokens to generate \*
+- `--max-checkpoints`: Maximum checkpoints to keep \*\*
+- `--batch-size`: Override batch size for training \*\*
+- `--block-size`: Override context window size \*
+- `--lr`: Override learning rate \*\*
+- `--embedding-dim`: Override embedding dimension size (LSTM / GRU)
+- `--hidden-size`: Override hidden layer size (LSTM / GRU)
+- `--num-layers`: Override number of model layers (LSTM / GRU / transformer)
+- `--max-seq-len`: Override maximum sequence length (transformer)
+- `--num-heads`: Override number of attention heads (transformer)
+- `--ff-dim`: Override feedforward dimension (transformer)
 
 #### Notes
 
 - The model argument will default to `--model transformer` if omitted.
 - Any runtime arguments omitted will default to the respective value defined in `config.json`.
 - Boolean flags support flexible input: `true`, `false`, `on`, `off`, `yes`, `no`, `1`, `0`.
+- **distilgpt2** uses a pre-trained Hugging Face model and is inference-only (cannot be trained).
 
 ### Train a model
 
 ```bash
-# Train the Bigram model
-python main.py --model bigram --training true
+# Train the Transformer model
+python main.py --model transformer --training true
 ```
 
 ### Generate text
@@ -304,7 +361,7 @@ After training, switch to generation mode by setting `"training": false` inside 
 Then run the same command to generate text:
 
 ```bash
-python main.py --model lstm
+python main.py --model transformer
 ```
 
 The output will begin with a randomly selected seed character and continue for the configured number of tokens.
@@ -390,6 +447,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
+- **Statistics**: 111 unit tests, 98% coverage, 615 stmts / 10 miss
 - To run all tests:
   ```bash
   pytest
@@ -405,13 +463,13 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
   ```
 - Test output will show which tests passed or failed, and coverage will report which lines are tested.
 - Coverage includes data processing, plotting, model logic, CLI argument parsing, tuning, and more.
-- Current unit test coverage is 98% (544 stmts / 10 miss).
 
 ## Future Improvements
 
 - Add temperature scaling for more controllable sampling
-- Implement training for transformer model
-- Implement transformer model from scratch
+- Add support for additional pruners via config.json
+- Add code profiling tools to identify performance bottlenecks
+- Add learning rate scheduling during training
 
 ## License
 

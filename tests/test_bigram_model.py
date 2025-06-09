@@ -23,7 +23,7 @@ def get_bigram_config():
 
 def get_bigram_model(
     config: dict[str, Any] = get_bigram_config(),
-    cfg_path: str = "config.json",
+    cfg_path: str = "test_config.json",
     vocab_size: int = 10,
 ):
     return BigramLanguageModel(config, cfg_path, vocab_size)
@@ -32,6 +32,17 @@ def get_bigram_model(
 def test_bigram_model():
     model = get_bigram_model()
     assert model is not None
+
+
+def test_bigram_model_no_vocab():
+    model_not_initialized = False
+    try:
+        BigramLanguageModel(
+            config=get_bigram_config(), cfg_path="test_config.json", vocab_size=0
+        )
+    except ValueError:
+        model_not_initialized = True
+    assert model_not_initialized
 
 
 def test_bigram_model_init():
@@ -57,10 +68,8 @@ def test_bigram_model_repr():
 def test_bigram_model_forward():
     model = get_bigram_model()
     idx = torch.tensor([[1, 2, 3, 4, 5]])
-    targets = torch.tensor([[2, 3, 4, 5, 6]])
-    logits, loss = model(idx, targets)
-    assert logits.shape == torch.Size([5, 10])
-    assert loss > 0
+    logits = model(idx)
+    assert logits.shape == torch.Size([1, 5, 10])
 
 
 def test_bigram_model_generate():
