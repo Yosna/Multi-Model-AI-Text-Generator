@@ -1,4 +1,5 @@
 from models.registry import ModelRegistry as Model
+import pytest
 import torch
 import torch.nn as nn
 
@@ -37,13 +38,9 @@ def test_gru_model():
     assert model is not None
 
 
-def test_gru_model_no_vocab():
-    model_not_initialized = False
-    try:
+def test_gru_model_no_vocab_size():
+    with pytest.raises(ValueError):
         Model.GRULM(config=get_gru_config(), cfg_path="test_config.json", vocab_size=0)
-    except ValueError:
-        model_not_initialized = True
-    assert model_not_initialized
 
 
 def test_gru_model_init():

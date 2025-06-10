@@ -1,4 +1,5 @@
 from models.registry import ModelRegistry as Model
+import pytest
 import torch
 import torch.nn as nn
 from optuna import TrialPruned
@@ -112,9 +113,5 @@ def test_trial_pruning(tmp_path):
     model = MockModel(str(tmp_path))
     data = torch.tensor([i for i in range(100)])
     trial = MockTrial()
-    trial_pruned = False
-    try:
+    with pytest.raises(TrialPruned):
         train(model, data, trial)  # type: ignore
-    except TrialPruned:
-        trial_pruned = True
-    assert trial_pruned

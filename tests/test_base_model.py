@@ -1,4 +1,5 @@
 from models.registry import ModelRegistry as Model
+import pytest
 import torch
 import torch.nn as nn
 import os
@@ -90,3 +91,11 @@ def test_base_model_new_token():
     assert next_idx.shape == torch.Size([1, 1])
     assert model.vocab_size is not None
     assert next_idx.item() in range(model.vocab_size)
+
+
+def test_not_implemented_methods():
+    model = Model.BaseLM(model_name="mock", config={})
+    with pytest.raises(NotImplementedError):
+        model.generate()
+    with pytest.raises(NotImplementedError):
+        model.run()

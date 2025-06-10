@@ -1,5 +1,9 @@
 # Text Generation Language Models in PyTorch
 
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 This project implements five text generation language models using PyTorch:
 
 - **Bigram model** — a simple neural network that learns character-to-character transition probabilities
@@ -8,7 +12,7 @@ This project implements five text generation language models using PyTorch:
 - **Transformer model** — a trainable transformer supporting both training and generation
 - **DistilGPT2 model** — inference-only; uses a pre-trained Hugging Face transformer for high-quality text generation
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage**: 98%).
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage**: 100%).
 
 ## Table of Contents
 
@@ -29,7 +33,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 
 ## Features
 
-- Character-level tokenization across multiple input files
+- Character-level or word-level tokenization across multiple input files (configurable via `token_level`)
 - Dynamic vocabulary and index mapping
 - Modular model registry for Bigram, LSTM, GRU, Transformer, and DistilGPT2 (inference-only)
 - Configurable training and hyperparameter tuning via `config.json`
@@ -38,7 +42,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Automatic checkpoint rotation and resumption
 - Multinomial sampling for randomized generation
 - Comprehensive CLI interface with model selection, runtime, and hyperparameter configuration
-- Full unit test coverage (98%) for all major modules
+- Full unit test coverage (100%) for all modules
 - Tests include generation and training for all models, tuning, visualization, CLI behavior, and argument parsing helpers
 - Loss visualization with matplotlib, including smoothing and saving plots
 - GPU-accelerated training by default
@@ -123,6 +127,7 @@ All behavior is driven by a single `config.json` file.
   },
 
   "save_model": true,
+  "token_level": "word",
   "models": {
     "bigram": {
       "runtime": {
@@ -276,11 +281,12 @@ All behavior is driven by a single `config.json` file.
 
 You can configure:
 
-- Dataset source and location
-- Training parameters for each model
-- Model architecture parameters
-- Loss visualization settings
-- Hyperparameter tuning ranges and options
+- **Datasets** (`datasets`): Source and location to pull from
+- **Tokenization** (`token_level`): Character ("char") and word ("word") tokenization level for all models
+- **Runtime** (`runtime`): Training and generation settings
+- **Hyperparameters** (`hparams`): Model-specific architecture and optimization parameters
+- **Visualization** (`visualization`): Loss plotting, smoothing, and saving options
+- **Tuning Ranges** (`tuning_ranges`): Hyperparameter search spaces for automatic tuning
 
 ## Hyperparameter Tuning
 
@@ -364,7 +370,7 @@ Then run the same command to generate text:
 python main.py --model transformer
 ```
 
-The output will begin with a randomly selected seed character and continue for the configured number of tokens.
+The output will begin with a randomly selected seed character or word (depending on `token_level`) and continue for the configured number of tokens.
 
 ## Loss Visualization
 
@@ -447,7 +453,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 111 unit tests, 98% coverage, 615 stmts / 10 miss
+- **Statistics**: 117 unit tests, 100% coverage, 623 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest
@@ -470,6 +476,8 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - Add support for additional pruners via config.json
 - Add code profiling tools to identify performance bottlenecks
 - Add learning rate scheduling during training
+- Add visualization for transformer attention
+- Add beam search to model generation
 
 ## License
 

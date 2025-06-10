@@ -1,4 +1,15 @@
 from library import _load_from_local, _load_from_huggingface, get_dataset
+from unittest.mock import patch
+import pytest
+
+
+class MockSplit:
+    def __init__(self, data):
+        self.data = data
+        self.column_names = ["text"]
+
+    def __iter__(self):
+        return iter(self.data)
 
 
 def build_file(tmp_path, file_name, content):
@@ -14,30 +25,35 @@ def build_dir(tmp_path):
     build_file(tmp_path, "file4.docx", "DOCX_CONTENT")
 
 
-def test_load_from_local(tmp_path, extension="txt"):
+def test_load_from_local(tmp_path):
     build_dir(tmp_path)
-    text = _load_from_local(tmp_path, extension)
+    text = _load_from_local(tmp_path, "txt")
     expected = "Hello,\n World!\n"
     assert all(word in text for word in ["Hello", "World"])
     assert text == expected
     assert len(text) == len(expected)
 
 
-def test_local_extension_filtering(tmp_path, extension="txt"):
+def test_local_extension_filtering(tmp_path):
     build_dir(tmp_path)
-    text = _load_from_local(tmp_path, extension)
+    text = _load_from_local(tmp_path, "txt")
     expected = "Hello,\n World!\n"
     assert expected in text
     assert "PDF_CONTENT" not in text
     assert "DOCX_CONTENT" not in text
 
 
-def test_load_from_huggingface(
-    name="ag_news", config=None, split="train", field="text"
-):
-    text = _load_from_huggingface(name, config, split, field)
+def test_load_from_huggingface():
+    text = _load_from_huggingface("ag_news", None, "train", "text")
     assert text is not None
     assert len(text) > 0
+
+
+def test_load_from_huggingface_dict():
+    dataset = {"train": MockSplit([{"text": "Hello, World!"}])}
+    with patch("library.load_dataset", return_value=dataset):
+        text = _load_from_huggingface("ag_news", None, "train", "text")
+        assert text == "Hello, World!"
 
 
 def test_get_dataset_library():
@@ -52,6 +68,19 @@ def test_get_dataset_library():
     text = get_dataset(datasets["source"], datasets["locations"])
     assert text is not None
     assert len(text) > 0
+
+
+def test_get_dataset_library_invalid_source():
+    datasets = {
+        "source": "library",
+        "locations": {
+            "library": {
+                "data_name": "invalid",
+            }
+        },
+    }
+    with pytest.raises(ValueError):
+        get_dataset(datasets["source"], datasets["locations"])
 
 
 def test_get_dataset_huggingface():
@@ -72,7 +101,6 @@ def test_get_dataset_huggingface():
 
 
 def test_get_dataset_invalid_source():
-    get_dataset_ran_unsuccessfully = False
     datasets = {
         "source": "invalid",
         "locations": {
@@ -84,16 +112,11 @@ def test_get_dataset_invalid_source():
             }
         },
     }
-    try:
+    with pytest.raises(ValueError):
         get_dataset(datasets["source"], datasets["locations"])
-    except ValueError as e:
-        print(e)
-        get_dataset_ran_unsuccessfully = True
-    assert get_dataset_ran_unsuccessfully
 
 
 def test_get_dataset_invalid_field():
-    get_dataset_ran_unsuccessfully = False
     datasets = {
         "source": "huggingface",
         "locations": {
@@ -105,9 +128,5 @@ def test_get_dataset_invalid_field():
             }
         },
     }
-    try:
+    with pytest.raises(ValueError):
         get_dataset(datasets["source"], datasets["locations"])
-    except ValueError as e:
-        print(e)
-        get_dataset_ran_unsuccessfully = True
-    assert get_dataset_ran_unsuccessfully

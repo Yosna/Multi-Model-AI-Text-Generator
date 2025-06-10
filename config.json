@@ -19,6 +19,7 @@
   },
 
   "save_model": true,
+  "token_level": "word",
   "models": {
     "bigram": {
       "runtime": {
@@ -101,7 +102,7 @@
     }
   },
 
-  "auto_tuning": true,
+  "auto_tuning": false,
   "save_tuning": true,
   "tuning_ranges": {
     "batch_size": {

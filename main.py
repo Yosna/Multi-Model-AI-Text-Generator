@@ -34,11 +34,12 @@ def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
     parse_config(args, cfg_path)
 
     model_name = args.model.lower()
+    token_level = get_config(cfg_path, "token_level")
     datasets = get_config(cfg_path, "datasets")
     text = get_dataset(datasets["source"], datasets["locations"])
-    chars, vocab_size = build_vocab(text)
-    stoi, itos = create_mappings(chars)
-    data = encode_data(text, stoi)
+    tokens, vocab, vocab_size = build_vocab(text, token_level=token_level)
+    stoi, itos = create_mappings(vocab)
+    data = encode_data(tokens, stoi)
     config = get_config(cfg_path, "models")
     model = get_model(Model, model_name, config, cfg_path, vocab_size)
 
@@ -94,6 +95,7 @@ def run_model(
             model.load_state_dict(torch.load(model.ckpt_path))
         except Exception as e:
             print(f"Error loading model: {e}")
+
     if model.training:
         optimize_and_train(model, data)
     else:

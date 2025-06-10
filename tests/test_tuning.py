@@ -1,4 +1,5 @@
 from models.registry import ModelRegistry as Model
+import pytest
 import torch
 import torch.nn as nn
 import json
@@ -23,6 +24,7 @@ def get_test_config():
                     "batch_size": 2,
                     "block_size": 4,
                     "lr": 0.0015,
+                    "num_layers": 2,
                 },
             }
         },
@@ -42,6 +44,7 @@ def get_test_config():
                 "step": 1,
             },
             "lr": {"type": "float", "min": 0.001, "max": 0.002, "log": False},
+            "num_layers": {"type": "categorical", "values": [1, 2]},
         },
         "visualization": {
             "show_plot": False,
@@ -106,17 +109,9 @@ def test_make_objective_error(tmp_path):
     build_file(tmp_path, "config.json", json.dumps(get_test_config()))
     model = MockModel(str(tmp_path))
     data = torch.tensor([i for i in range(100)])
-    error_from_zero_triggered = False
-    error_from_none_triggered = False
-    try:
+    with pytest.raises(ValueError):
         model.vocab_size = 0
         make_objective(model, data)
-    except ValueError:
-        error_from_zero_triggered = True
-    try:
+    with pytest.raises(ValueError):
         model.vocab_size = None
         make_objective(model, data)
-    except ValueError:
-        error_from_none_triggered = True
-    assert error_from_zero_triggered
-    assert error_from_none_triggered

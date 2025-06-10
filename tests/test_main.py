@@ -22,6 +22,7 @@ def get_test_config(tmp_path, training=True):
                 },
             },
             "save_model": False,
+            "token_level": "char",
             "models": {
                 "bigram": get_test_model(training),
                 "lstm": get_test_model(training),
@@ -187,3 +188,24 @@ def test_run_model_generation(tmp_path, model):
     except Exception as e:
         print(e)
     assert run_model_ran_successfully
+
+
+def test_run_model_load_error(tmp_path, model="bigram"):
+    model = MockModel(tmp_path, model, training=True)
+    error_loading_model = False
+
+    os.makedirs(model.dir_path, exist_ok=True)
+    os.makedirs(model.ckpt_dir, exist_ok=True)
+    with open(model.ckpt_path, "w") as f:
+        f.write("Invalid state dict")
+
+    try:
+        run_model(
+            model=model,
+            data=torch.tensor([i for i in range(100)]),
+            stoi={"!": 0, "H": 1, "e": 2, "l": 3, "o": 4},
+            itos={0: "!", 1: "H", 2: "e", 3: "l", 4: "o"},
+        )
+    except Exception as e:
+        error_loading_model = True
+    assert error_loading_model

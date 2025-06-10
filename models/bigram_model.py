@@ -55,6 +55,13 @@ class BigramLanguageModel(BaseLanguageModel):
 
         if not self.vocab_size:
             raise ValueError("Vocab size is not set for Bigram model")
+        elif self.vocab_size > 10000:
+            raise ValueError(
+                f"Attempted to set vocab_size to {self.vocab_size}.\n"
+                "Bigram model is not suitable for large vocab sizes.\n"
+                "If you're using word-level tokenization, consider using a\n"
+                "different model or switching to character-level tokenization."
+            )
 
         # Each character gets a vector of size vocab_size
         # Character predictions are learned via probability distribution

@@ -1,4 +1,5 @@
 from models.registry import ModelRegistry as Model
+import pytest
 import torch
 import torch.nn as nn
 
@@ -37,15 +38,11 @@ def test_lstm_model():
     assert model is not None
 
 
-def test_lstm_model_no_vocab():
-    model_not_initialized = False
-    try:
+def test_lstm_model_no_vocab_size():
+    with pytest.raises(ValueError):
         Model.LSTMLM(
             config=get_lstm_config(), cfg_path="test_config.json", vocab_size=0
         )
-    except ValueError:
-        model_not_initialized = True
-    assert model_not_initialized
 
 
 def test_lstm_model_init():

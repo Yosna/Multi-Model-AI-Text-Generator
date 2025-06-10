@@ -1,4 +1,5 @@
 from unittest.mock import patch
+import pytest
 import sys
 import argparse
 import pytest
@@ -83,10 +84,8 @@ def test_parse_args_model(model):
 def test_parse_args_invalid(invalid):
     cli_args = ["main.py", "--model", invalid]
     with patch.object(sys, "argv", cli_args):
-        try:
+        with pytest.raises(SystemExit):
             parse_args()
-        except SystemExit as e:
-            assert e.code == 2
 
 
 def test_parse_args_runtime():

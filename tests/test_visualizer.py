@@ -1,4 +1,5 @@
 from models.registry import ModelRegistry as Model
+from unittest.mock import patch
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,24 +22,30 @@ def test_plot_losses(tmp_path):
     losses = [5.0, 4.0, 3.0, 2.0, 1.0]
     val_losses = [1.0, 2.0, 3.0, 4.0, 5.0]
     steps = [i for i in range(len(losses))]
+    save_plot, show_plot = None, None
 
-    plot_losses(
-        MockModel(tmp_path),
-        losses,
-        val_losses,
-        step_divisor=1,
-        show_plot=False,
-        smooth_loss=False,
-        smooth_val_loss=False,
-        weight=1,
-        save_data=False,
-    )
+    with patch("visualizer.save_plot") as save_plot, patch(
+        "visualizer.plt.show"
+    ) as show_plot:
+        plot_losses(
+            MockModel(tmp_path),
+            losses,
+            val_losses,
+            step_divisor=1,
+            show_plot=True,
+            smooth_loss=False,
+            smooth_val_loss=False,
+            weight=1,
+            save_data=True,
+        )
 
     axes = plt.gca()
     plt_losses = axes.lines[0]
     plt_val_losses = axes.lines[1]
     plt.close()
 
+    save_plot.assert_called_once()
+    show_plot.assert_called_once()
     assert axes.get_title() == "Loss over Steps for mock_model.py"
     assert axes.get_ylabel() == "Loss"
     assert axes.get_xlabel() == "Steps"

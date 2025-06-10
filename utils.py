@@ -21,22 +21,34 @@ from typing import TypeVar, Any, cast
 T = TypeVar("T")
 
 
-def build_vocab(text: str) -> tuple[list[str], int]:
+def build_vocab(
+    text: str, token_level: str = "char"
+) -> tuple[list[str], list[str], int]:
     """
     Build a sorted character vocabulary from text and return it with its size.
 
     Args:
         text (str): Input text.
-
+        token_level (str): Token level to use for vocabulary building.
+            Options: "char" (default), or "word".
     Returns:
-        tuple[list[str], int]: Sorted list of unique characters and vocabulary size.
+        tuple[list[str], list[str], int]:
+            Sorted list of unique tokens, sorted list of unique characters,
+            and vocabulary size.
     """
-    chars = sorted(set(text))
-    vocab_size = len(chars)
-    return chars, vocab_size
+    if token_level == "char":
+        tokens = list(text)
+    elif token_level == "word":
+        tokens = text.split()
+    else:
+        raise ValueError(f"Invalid token level: {token_level}")
+
+    vocab = sorted(set(tokens))
+    vocab_size = len(vocab)
+    return tokens, vocab, vocab_size
 
 
-def create_mappings(chars: list[str]) -> tuple[dict[str, int], dict[int, str]]:
+def create_mappings(tokens: list[str]) -> tuple[dict[str, int], dict[int, str]]:
     """
     Create character-to-index and index-to-character mappings.
 
@@ -46,23 +58,23 @@ def create_mappings(chars: list[str]) -> tuple[dict[str, int], dict[int, str]]:
     Returns:
         tuple[dict[str, int], dict[int, str]]: stoi and itos mappings.
     """
-    stoi = {ch: i for i, ch in enumerate(chars)}
-    itos = {i: ch for i, ch in enumerate(chars)}
+    stoi = {token: i for i, token in enumerate(tokens)}
+    itos = {i: token for i, token in enumerate(tokens)}
     return stoi, itos
 
 
-def encode_data(text: str, stoi: dict[str, int]) -> torch.Tensor:
+def encode_data(tokens: list[str], stoi: dict[str, int]) -> torch.Tensor:
     """
     Encode text into a tensor of integer indices using the provided mapping.
 
     Args:
-        text (str): Input text.
+        tokens (list[str]): Input tokens.
         stoi (dict[str, int]): Character-to-index mapping.
 
     Returns:
         torch.Tensor: Encoded tensor of indices (dtype=torch.long).
     """
-    encoded = [stoi[c] for c in text]
+    encoded = [stoi[t] for t in tokens]
     data = torch.tensor(encoded, dtype=torch.long)
     return data
 
@@ -191,7 +203,7 @@ def load_config(path: str) -> dict[str, Any]:
         return json.load(f)
 
 
-def get_config(path: str, config_name: str) -> dict[str, Any]:
+def get_config(path: str, config_name: str) -> Any:
     """
     Load and return the configuration dictionary for the given model.
 

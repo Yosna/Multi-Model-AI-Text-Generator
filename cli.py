@@ -1,3 +1,9 @@
+"""
+Command-line interface for configuring, training, generating, and managing
+language models. Handles argument parsing, runtime overrides, and user
+interaction for all supported models and features.
+"""
+
 import argparse
 from typing import Any
 from utils import load_config, save_config
