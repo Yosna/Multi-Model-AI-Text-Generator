@@ -79,18 +79,21 @@ def encode_data(tokens: list[str], stoi: dict[str, int]) -> torch.Tensor:
     return data
 
 
-def decode_data(data: torch.Tensor, itos: dict[int, str]) -> str:
+def decode_data(data: torch.Tensor, itos: dict[int, str], token_level: str) -> str:
     """
     Decode a tensor of integer indices back into a string using the mapping.
 
     Args:
         data (torch.Tensor): Tensor of indices.
         itos (dict[int, str]): Index-to-character mapping.
+        token_level (str): Token level to use for vocabulary building.
+            Options: "char" (default), or "word"
 
     Returns:
         str: Decoded string.
     """
-    decoded = "".join([itos[i] for i in data.tolist()])
+    separator = " " if token_level == "word" else ""
+    decoded = separator.join([itos[i] for i in data.tolist()])
     return decoded
 
 
@@ -233,6 +236,7 @@ def get_model(
     config: dict[str, Any],
     cfg_path: str,
     vocab_size: int,
+    token_level: str,
 ) -> BaseLM:
     """
     Create and return a language model based on the specified model type.
@@ -243,6 +247,8 @@ def get_model(
         config (dict[str, Any]): Configuration dictionary for all models.
         cfg_path (str): Path to the config file.
         vocab_size (int): Vocabulary size (not used for transformer).
+        token_level (str): Token level to use for vocabulary building.
+            Options: "char" (default), or "word"
 
     Returns:
         BaseLM: Instantiated language model.
@@ -251,13 +257,15 @@ def get_model(
         ValueError: If model_name is not recognized.
     """
     if model_name == "bigram":
-        model = models.BigramLM(config[model_name], cfg_path, vocab_size)
+        model = models.BigramLM(config[model_name], cfg_path, vocab_size, token_level)
     elif model_name == "lstm":
-        model = models.LSTMLM(config[model_name], cfg_path, vocab_size)
+        model = models.LSTMLM(config[model_name], cfg_path, vocab_size, token_level)
     elif model_name == "gru":
-        model = models.GRULM(config[model_name], cfg_path, vocab_size)
+        model = models.GRULM(config[model_name], cfg_path, vocab_size, token_level)
     elif model_name == "transformer":
-        model = models.TransformerLM(config[model_name], cfg_path, vocab_size)
+        model = models.TransformerLM(
+            config[model_name], cfg_path, vocab_size, token_level
+        )
     elif model_name == "distilgpt2":
         model = models.DistilGPT2LM(config[model_name], cfg_path)
     else:

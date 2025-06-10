@@ -119,11 +119,18 @@ def test_encode_data():
     assert data.dtype == torch.long
 
 
-def test_decode_data():
+def test_decode_data_char():
     itos = {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}
     data = torch.tensor([1, 2, 3, 3, 4, 0])
-    decoded = decode_data(data, itos)
+    decoded = decode_data(data, itos, "char")
     assert decoded == "Hello!"
+
+
+def test_decode_data_word():
+    itos = {0: "Hello,", 1: "World!"}
+    data = torch.tensor([0, 1])
+    decoded = decode_data(data, itos, "word")
+    assert decoded == "Hello, World!"
 
 
 def test_split_data():
@@ -176,10 +183,10 @@ def test_get_config_errors(tmp_path):
 
 def test_get_model():
     config = get_test_config()["models"]
-    bigram = get_model(Model, "bigram", config, "config.json", 10)
-    lstm = get_model(Model, "lstm", config, "config.json", 10)
-    gru = get_model(Model, "gru", config, "config.json", 10)
-    distilgpt2 = get_model(Model, "distilgpt2", config, "config.json", 10)
+    bigram = get_model(Model, "bigram", config, "config.json", 10, "char")
+    lstm = get_model(Model, "lstm", config, "config.json", 10, "char")
+    gru = get_model(Model, "gru", config, "config.json", 10, "char")
+    distilgpt2 = get_model(Model, "distilgpt2", config, "config.json", 10, "char")
     assert bigram.__class__.__name__ == "BigramLanguageModel"
     assert lstm.__class__.__name__ == "LSTMLanguageModel"
     assert gru.__class__.__name__ == "GRULanguageModel"
@@ -189,7 +196,7 @@ def test_get_model():
 def test_get_model_error():
     config = get_test_config()["models"]
     with pytest.raises(ValueError):
-        get_model(Model, "test", config, "config.json", 10)
+        get_model(Model, "test", config, "config.json", 10, "char")
 
 
 def test_save_checkpoint(tmp_path):

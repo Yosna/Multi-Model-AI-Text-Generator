@@ -30,6 +30,7 @@ def get_lstm_model():
         config=get_lstm_config(),
         cfg_path="test_config.json",
         vocab_size=5,
+        token_level="char",
     )
 
 
@@ -41,7 +42,10 @@ def test_lstm_model():
 def test_lstm_model_no_vocab_size():
     with pytest.raises(ValueError):
         Model.LSTMLM(
-            config=get_lstm_config(), cfg_path="test_config.json", vocab_size=0
+            config=get_lstm_config(),
+            cfg_path="test_config.json",
+            vocab_size=0,
+            token_level="char",
         )
 
 

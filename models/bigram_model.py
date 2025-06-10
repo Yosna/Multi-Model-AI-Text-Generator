@@ -33,7 +33,9 @@ class BigramLanguageModel(BaseLanguageModel):
     block_size: int
     lr: float
 
-    def __init__(self, config: dict[str, Any], cfg_path: str, vocab_size: int) -> None:
+    def __init__(
+        self, config: dict[str, Any], cfg_path: str, vocab_size: int, token_level: str
+    ) -> None:
         """
         Initialize the bigram model and its parameters.
 
@@ -41,12 +43,15 @@ class BigramLanguageModel(BaseLanguageModel):
             config (dict): Configuration dictionary for the model.
             cfg_path (str): Path to the config file.
             vocab_size (int): Number of unique tokens in the vocabulary.
+            token_level (str): Token level to use for vocabulary building.
+                Options: "char" (default), or "word"
         """
         super().__init__(
             model_name="bigram",
             config=config,
             cfg_path=cfg_path,
             vocab_size=vocab_size,
+            token_level=token_level,
         )
 
         # Set all hparams config keys as attributes
@@ -118,4 +123,4 @@ class BigramLanguageModel(BaseLanguageModel):
             next_idx = self.new_token(logits)
             generated = torch.cat((generated, next_idx.flatten()), dim=0)
 
-        return decode_data(generated, itos)
+        return decode_data(generated, itos, self.token_level)

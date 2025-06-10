@@ -26,8 +26,9 @@ def get_bigram_model(
     config: dict[str, Any] = get_bigram_config(),
     cfg_path: str = "test_config.json",
     vocab_size: int = 10,
+    token_level: str = "char",
 ):
-    return Model.BigramLM(config, cfg_path, vocab_size)
+    return Model.BigramLM(config, cfg_path, vocab_size, token_level)
 
 
 def test_bigram_model():
@@ -38,11 +39,17 @@ def test_bigram_model():
 def test_bigram_model_vocab_errors():
     with pytest.raises(ValueError):
         Model.BigramLM(
-            config=get_bigram_config(), cfg_path="test_config.json", vocab_size=0
+            config=get_bigram_config(),
+            cfg_path="test_config.json",
+            vocab_size=0,
+            token_level="char",
         )
     with pytest.raises(ValueError):
         Model.BigramLM(
-            config=get_bigram_config(), cfg_path="test_config.json", vocab_size=100000
+            config=get_bigram_config(),
+            cfg_path="test_config.json",
+            vocab_size=100000,
+            token_level="char",
         )
 
 

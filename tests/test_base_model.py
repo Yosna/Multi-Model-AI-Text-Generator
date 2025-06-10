@@ -27,8 +27,9 @@ class BaseLanguageModel(Model.BaseLM):
         config: dict[str, Any] = get_runtime_config(),
         cfg_path: str = "config.json",
         vocab_size: int = 10,
+        token_level: str = "char",
     ):
-        super().__init__(model_name, config, cfg_path, vocab_size)
+        super().__init__(model_name, config, cfg_path, vocab_size, token_level)
         self.embedding = nn.Embedding(vocab_size, vocab_size)
 
     def forward(self, idx):

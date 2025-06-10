@@ -32,6 +32,7 @@ def get_transformer_model():
         config=get_transformer_config(),
         cfg_path="test_config.json",
         vocab_size=5,
+        token_level="char",
     )
 
 
@@ -46,6 +47,7 @@ def test_transformer_model_no_vocab_size():
             config=get_transformer_config(),
             cfg_path="test_config.json",
             vocab_size=0,
+            token_level="char",
         )
 
 

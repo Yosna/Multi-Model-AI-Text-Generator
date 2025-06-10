@@ -41,7 +41,7 @@ def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
     stoi, itos = create_mappings(vocab)
     data = encode_data(tokens, stoi)
     config = get_config(cfg_path, "models")
-    model = get_model(Model, model_name, config, cfg_path, vocab_size)
+    model = get_model(Model, model_name, config, cfg_path, vocab_size, token_level)
 
     validate_model(model, text, data, stoi, itos)
 

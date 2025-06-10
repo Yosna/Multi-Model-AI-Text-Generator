@@ -46,6 +46,7 @@ class BaseLanguageModel(nn.Module):
         config: dict[str, Any],
         cfg_path: str = "config.json",
         vocab_size: int | None = None,
+        token_level: str = "char",
     ) -> None:
         """
         Initialize the base language model.
@@ -64,6 +65,7 @@ class BaseLanguageModel(nn.Module):
         self.name: str = model_name
         self.cfg_path: str = cfg_path
         self.vocab_size: int | None = vocab_size
+        self.token_level: str = token_level
         self.dir_path: str = os.path.join("checkpoints", model_name)
         self.plot_dir: str = os.path.join("plots", model_name)
         self.ckpt_dir: str = os.path.join(self.dir_path, "checkpoint_1")

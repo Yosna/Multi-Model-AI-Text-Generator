@@ -10,6 +10,7 @@ from tuning import optimize_and_train, make_objective
 def get_test_config():
     return {
         "save_model": False,
+        "token_level": "char",
         "models": {
             "bigram": {
                 "runtime": {
@@ -64,6 +65,7 @@ class MockModel(Model.BaseLM):
             config=config,
             cfg_path=os.path.join(base_dir, "config.json"),
             vocab_size=100,
+            token_level="char",
         )
 
         for key, value in config.get("hparams", {}).items():

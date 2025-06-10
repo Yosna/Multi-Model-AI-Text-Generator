@@ -69,7 +69,9 @@ def make_objective(model: Model.BaseLM, data: torch.Tensor):
 
     models = get_config(model.cfg_path, "models")
     tune = get_config(model.cfg_path, "tuning_ranges")
-    model = get_model(Model, model.name, models, model.cfg_path, model.vocab_size)
+    model = get_model(
+        Model, model.name, models, model.cfg_path, model.vocab_size, model.token_level
+    )
     hparams = models[model.name].get("hparams", {})
 
     def objective(trial: optuna.Trial):

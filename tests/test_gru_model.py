@@ -30,6 +30,7 @@ def get_gru_model():
         config=get_gru_config(),
         cfg_path="test_config.json",
         vocab_size=5,
+        token_level="char",
     )
 
 
@@ -40,7 +41,12 @@ def test_gru_model():
 
 def test_gru_model_no_vocab_size():
     with pytest.raises(ValueError):
-        Model.GRULM(config=get_gru_config(), cfg_path="test_config.json", vocab_size=0)
+        Model.GRULM(
+            config=get_gru_config(),
+            cfg_path="test_config.json",
+            vocab_size=0,
+            token_level="char",
+        )
 
 
 def test_gru_model_init():

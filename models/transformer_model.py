@@ -44,7 +44,9 @@ class TransformerLanguageModel(BaseLanguageModel):
     ff_dim: int
     num_layers: int
 
-    def __init__(self, config: dict[str, Any], cfg_path: str, vocab_size: int) -> None:
+    def __init__(
+        self, config: dict[str, Any], cfg_path: str, vocab_size: int, token_level: str
+    ) -> None:
         """
         Initialize the Transformer model and its parameters.
 
@@ -52,12 +54,15 @@ class TransformerLanguageModel(BaseLanguageModel):
             config (dict): Configuration dictionary for the model.
             cfg_path (str): Path to the config file.
             vocab_size (int): Number of unique tokens in the vocabulary.
+            token_level (str): Token level to use for vocabulary building.
+                Options: "char" (default), or "word"
         """
         super().__init__(
             model_name="transformer",
             config=config,
             cfg_path=cfg_path,
             vocab_size=vocab_size,
+            token_level=token_level,
         )
 
         # Set all hparams config keys as attributes
@@ -152,4 +157,4 @@ class TransformerLanguageModel(BaseLanguageModel):
             idx = next_idx
             generated = torch.cat((generated, next_idx.flatten()), dim=0)
 
-        return decode_data(generated, itos)
+        return decode_data(generated, itos, self.token_level)

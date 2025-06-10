@@ -102,7 +102,7 @@
     }
   },
 
-  "auto_tuning": false,
+  "auto_tuning": true,
   "save_tuning": true,
   "tuning_ranges": {
     "batch_size": {
