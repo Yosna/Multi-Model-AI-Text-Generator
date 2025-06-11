@@ -19,32 +19,34 @@ def plot_losses(
     losses: list[float],
     val_losses: list[float],
     step_divisor: int,
-    show_plot: bool,
-    smooth_loss: bool,
-    smooth_val_loss: bool,
-    weight: float,
-    save_data: bool,
+    visualization: dict[str, bool | float],
 ) -> None:
     """
     Plot and training/validation loss curves for a model.
-    Options to smooth the loss curves and save the plot are configurable.
+
+    Creates a plot of training and validation losses over time, with optional
+    smoothing and saving capabilities. The visualization dictionary controls
+    various plotting options.
 
     Args:
-        model (nn.Module): The model instance.
-            (must have a 'name' and 'plot_dir' attribute)
-        losses (list[float]): Training loss values.
-        val_losses (list[float]): Validation loss values.
-        step_divisor (int): Step divisor for validation loss.
-        show_plot (bool): Option to display the plot interactively.
-        smooth_loss (bool): Option to smooth the training loss curve.
-        smooth_val_loss (bool): Option to smooth the validation loss curve.
-        weight (float): Smoothing weight (0-1, higher is smoother).
-        save_data (bool): Option to save the plot as an image file.
+        model (BaseLM): Model instance being trained
+        losses (list[float]): List of training losses
+        val_losses (list[float]): List of validation losses
+        step_divisor (int): Divisor for step numbers (1 for full training)
+        visualization (dict[str, bool | float]): Dictionary containing:
+            - show_plot (bool): Whether to display the plot
+            - smooth_loss (bool): Whether to smooth training loss
+            - smooth_val_loss (bool): Whether to smooth validation loss
+            - weight (float): Smoothing weight (0-1)
+            - save_plot (bool): Whether to save the plot
     """
     steps = range(len(losses))
     val_steps = [i * model.interval for i in range(len(val_losses))]
-    losses = smooth(losses, weight) if smooth_loss else losses
-    val_losses = smooth(val_losses, weight) if smooth_val_loss else val_losses
+
+    if visualization.get("smooth_loss", False):
+        losses = smooth(losses, visualization.get("weight", 0.9))
+    if visualization.get("smooth_val_loss", False):
+        val_losses = smooth(val_losses, visualization.get("weight", 0.9))
 
     plt.plot(steps, losses, label="Training Loss")
     plt.plot(val_steps, val_losses, label="Validation Loss")
@@ -56,12 +58,10 @@ def plot_losses(
     plt.tight_layout()
 
     full_training_run = step_divisor == 1
-    if save_data and full_training_run:
+    if visualization.get("save_plot", False) and full_training_run:
         save_plot(model, plt, "losses")
-
-    if show_plot and full_training_run:
+    if visualization.get("show_plot", False) and full_training_run:
         plt.show()
-
     if not full_training_run:
         plt.close("all")
 

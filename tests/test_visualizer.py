@@ -17,6 +17,16 @@ class MockModel(Model.BaseLM):
         self.plot_dir = os.path.join(tmp_path, self.name)
 
 
+def get_test_visualization_config():
+    return {
+        "save_plot": True,
+        "show_plot": True,
+        "smooth_loss": True,
+        "smooth_val_loss": True,
+        "weight": 0,
+    }
+
+
 def test_plot_losses(tmp_path):
     plt.close("all")
     losses = [5.0, 4.0, 3.0, 2.0, 1.0]
@@ -32,18 +42,15 @@ def test_plot_losses(tmp_path):
             losses,
             val_losses,
             step_divisor=1,
-            show_plot=True,
-            smooth_loss=False,
-            smooth_val_loss=False,
-            weight=1,
-            save_data=True,
+            visualization=get_test_visualization_config(),
         )
 
     axes = plt.gca()
     plt_losses = axes.lines[0]
     plt_val_losses = axes.lines[1]
     plt.close()
-
+    print(plt_losses.get_ydata())
+    print(plt_val_losses.get_ydata())
     save_plot.assert_called_once()
     show_plot.assert_called_once()
     assert axes.get_title() == "Loss over Steps for mock_model.py"

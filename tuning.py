@@ -30,7 +30,7 @@ def optimize_and_train(model: Model.BaseLM, data: torch.Tensor, n_trials: int = 
     config = load_config(model.cfg_path)
     hparams = config["models"][model.name]["hparams"] or {}
 
-    if config.get("auto_tuning", False):
+    if config.get("model_options", {}).get("auto_tuning", False):
         objective = make_objective(model, data)
         study = optuna.create_study(
             direction="minimize",
@@ -40,7 +40,7 @@ def optimize_and_train(model: Model.BaseLM, data: torch.Tensor, n_trials: int = 
 
         best_params = study.best_trial.params
 
-        if config.get("save_tuning", False):
+        if config.get("model_options", {}).get("save_tuning", False):
             hparams.update(best_params)
             save_config(config, model.cfg_path)
 

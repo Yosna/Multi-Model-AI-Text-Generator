@@ -19,31 +19,14 @@ from utils import (
 )
 
 
-def get_models_config():
-    return {
-        "runtime": {
-            "training": True,
-            "steps": 1,
-            "interval": 1,
-            "patience": 10,
-            "max_new_tokens": 10,
-            "max_checkpoints": 1,
-        },
-        "hparams": {
-            "batch_size": 2,
-            "block_size": 3,
-            "lr": 0.0015,
-            "embedding_dim": 4,
-            "hidden_size": 8,
-            "num_layers": 1,
-        },
-    }
-
-
 def get_test_config():
     return {
-        "save_model": True,
-        "token_level": "char",
+        "model_options": {
+            "save_model": True,
+            "token_level": "char",
+            "auto_tuning": False,
+            "save_tuning": False,
+        },
         "models": {
             "bigram": get_models_config(),
             "lstm": get_models_config(),
@@ -57,6 +40,27 @@ def get_test_config():
             "smooth_val_loss": False,
             "weight": 1,
             "save_data": False,
+        },
+    }
+
+
+def get_models_config():
+    return {
+        "runtime": {
+            "training": True,
+            "steps": 1,
+            "interval": 1,
+            "patience": 10,
+            "max_new_tokens": 10,
+            "max_checkpoints": 10,
+        },
+        "hparams": {
+            "batch_size": 2,
+            "block_size": 3,
+            "lr": 0.0015,
+            "embedding_dim": 4,
+            "hidden_size": 8,
+            "num_layers": 1,
         },
     }
 
@@ -204,7 +208,7 @@ def test_save_checkpoint(tmp_path):
     checkpoints = 0
     build_file(tmp_path, "config.json", '{"models": {"bigram": {"test": true}}}')
     for i in range(11):
-        save_checkpoint(model, step=i, val_loss=1.33, max_checkpoints=10)
+        save_checkpoint(model, step=i, val_loss=1.33)
 
     with open(model.meta_path, "r", encoding="utf-8") as f:
         metadata = json.load(f)

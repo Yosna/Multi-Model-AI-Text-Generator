@@ -21,8 +21,12 @@ def get_test_config(tmp_path, training=True):
                     },
                 },
             },
-            "save_model": False,
-            "token_level": "char",
+            "model_options": {
+                "save_model": False,
+                "token_level": "char",
+                "auto_tuning": False,
+                "save_tuning": False,
+            },
             "models": {
                 "bigram": get_test_model(training),
                 "lstm": get_test_model(training),
@@ -30,7 +34,6 @@ def get_test_config(tmp_path, training=True):
                 "transformer": get_test_model(training),
                 "distilgpt2": get_test_model(training=False),
             },
-            "auto_tuning": False,
             "visualization": {
                 "show_plot": False,
                 "smooth_loss": False,

@@ -10,7 +10,12 @@ from training import train, validate_data
 
 def get_test_config():
     return {
-        "save_model": True,
+        "model_options": {
+            "save_model": True,
+            "token_level": "char",
+            "auto_tuning": False,
+            "save_tuning": False,
+        },
         "models": {
             "mock": {
                 "runtime": {
@@ -28,7 +33,6 @@ def get_test_config():
                 },
             }
         },
-        "auto_tuning": False,
         "visualization": {
             "show_plot": False,
             "smooth_loss": False,

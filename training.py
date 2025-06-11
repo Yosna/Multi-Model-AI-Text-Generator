@@ -59,7 +59,7 @@ def train(
         if overfit:
             break
 
-    plot_losses(model, losses, val_losses, step_divisor, **visualization)
+    plot_losses(model, losses, val_losses, step_divisor, visualization)
     return losses, val_losses
 
 
@@ -74,25 +74,20 @@ def validate_data(
     wait: int,
 ) -> tuple[bool, float, int]:
     """
-    Validate model performance and handle early stopping.
-    Saves the best model and restores it if overfitting is detected.
-    Returns overfit status, best loss, and wait count.
+    Validate the model on the validation dataset.
 
     Args:
-        model (Model.BaseLM): The model being trained.
-        data (torch.Tensor): Validation data as a 1D tensor of encoded characters.
-        step (int): Current training step.
-        step_divisor (int): Step divisor for validation frequency.
-        loss (float): Current training loss.
-        val_losses (list[float]): List to append validation losses to.
-        best_loss (float): Best validation loss so far.
-        wait (int): Number of validation steps since last improvement.
+        model (Model.BaseLM): Model to validate
+        data (torch.Tensor): Validation data
+        step (int): Current training step
+        step_divisor (int): Divisor for step numbers
+        loss (float): Current training loss
+        val_losses (list[float]): List to append validation losses to
+        best_loss (float): Best validation loss so far
+        wait (int): Number of steps without improvement
 
     Returns:
-        tuple[bool, float, int]: (overfit, best_loss, wait)
-            overfit (bool): True if early stopping triggered.
-            best_loss (float): Updated best validation loss.
-            wait (int): Updated wait counter.
+        Tuple of (overfit, best_loss, wait)
     """
     overfit = False
     if step % model.interval == 0:
@@ -100,29 +95,23 @@ def validate_data(
 
         with torch.no_grad():
             logits = model(xb)
-            val_loss = model.compute_loss(logits, xb, yb)
-
-        val_losses.append(val_loss.item())
+            val_loss = model.compute_loss(logits, xb, yb).item()
+            print(f"\n\n\nval_loss: {val_loss}\n\n\n")
 
         print(f"Step: {step:<10} loss: {loss:<20.10f} val_loss: {val_loss:<20.10f}")
 
-        save_model = get_config(model.cfg_path, "save_model")
+        val_losses.append(val_loss)
+        loss_improved = val_loss < best_loss
         full_training_run = step_divisor == 1
-        if save_model and full_training_run and (val_loss < best_loss):
-            # Save model if validation loss improves
-            best_loss = val_loss.item()
-            wait = 0
-            save_checkpoint(model, step, val_loss.item(), model.max_checkpoints)
-        elif full_training_run:
-            wait += 1
-            if wait >= model.patience:
-                # Try to restore best model before stopping
-                try:
-                    model.load_state_dict(torch.load(model.ckpt_path))
-                except Exception as e:
-                    print(f"Error restoring model: {e}")
-                overfit = True
-                print(f"Stopping due to overfitting.")
-                print(f"Step: {step}, Best Loss: {best_loss}")
+        save_model = get_config(model.cfg_path, "model_options").get(
+            "save_model", False
+        )
+
+        if loss_improved and full_training_run and save_model:
+            # Save model if validation loss improves during a full training run
+            save_checkpoint(model, step, val_loss)
+
+        # Check if training should stop due to overfitting
+        overfit, best_loss, wait = model.check_patience(best_loss, val_loss, wait)
 
     return overfit, best_loss, wait

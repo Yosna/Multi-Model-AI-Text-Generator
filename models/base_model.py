@@ -129,6 +129,39 @@ class BaseLanguageModel(nn.Module):
         loss = F.cross_entropy(logits, targets)
         return loss
 
+    def check_patience(
+        self, best_loss: float, val_loss: float, wait: int
+    ) -> tuple[bool, float, int]:
+        """Check if model has stopped improving and should stop training.
+
+        Monitors validation loss improvement and implements early stopping based on
+        the model's patience threshold. If validation loss doesn't improve for
+        patience number of steps, training should stop.
+
+        Args:
+            best_loss: Best validation loss seen so far
+            val_loss: Current validation loss
+            wait: Number of steps without improvement
+
+        Returns:
+            Tuple containing:
+            - overfit (bool): Whether training should stop due to overfitting
+            - best_loss (float): Updated best loss value
+            - wait (int): Updated wait counter
+        """
+        overfit = False
+        loss_improved = val_loss < best_loss
+        if loss_improved:
+            best_loss = val_loss
+            wait = 0
+        else:
+            wait += 1
+            if wait >= self.patience:
+                overfit = True
+                print(f"Stopping due to overfitting.")
+                print(f"Best Loss this training session: {best_loss}")
+        return overfit, best_loss, wait
+
     def new_token(self, logits: torch.Tensor) -> torch.Tensor:
         """
         Generate the next token in the sequence using the model's predictions.

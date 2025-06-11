@@ -9,8 +9,12 @@ from tuning import optimize_and_train, make_objective
 
 def get_test_config():
     return {
-        "save_model": False,
-        "token_level": "char",
+        "model_options": {
+            "save_model": False,
+            "token_level": "char",
+            "auto_tuning": True,
+            "save_tuning": True,
+        },
         "models": {
             "bigram": {
                 "runtime": {
@@ -29,8 +33,6 @@ def get_test_config():
                 },
             }
         },
-        "auto_tuning": True,
-        "save_tuning": True,
         "tuning_ranges": {
             "batch_size": {
                 "type": "int",
@@ -48,11 +50,11 @@ def get_test_config():
             "num_layers": {"type": "categorical", "values": [1, 2]},
         },
         "visualization": {
+            "save_plot": False,
             "show_plot": False,
             "smooth_loss": False,
             "smooth_val_loss": False,
             "weight": 1,
-            "save_data": False,
         },
     }
 

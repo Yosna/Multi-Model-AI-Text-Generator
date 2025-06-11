@@ -34,10 +34,10 @@ def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
     parse_config(args, cfg_path)
 
     model_name = args.model.lower()
-    token_level = get_config(cfg_path, "token_level")
+    token_level = get_config(cfg_path, "model_options").get("token_level", "char")
     datasets = get_config(cfg_path, "datasets")
     text = get_dataset(datasets["source"], datasets["locations"])
-    tokens, vocab, vocab_size = build_vocab(text, token_level=token_level)
+    tokens, vocab, vocab_size = build_vocab(text, token_level)
     stoi, itos = create_mappings(vocab)
     data = encode_data(tokens, stoi)
     config = get_config(cfg_path, "models")

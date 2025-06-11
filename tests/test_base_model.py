@@ -8,15 +8,17 @@ from typing import Any
 
 def get_runtime_config():
     return {
-        "training": True,
-        "batch_size": 2,
-        "block_size": 4,
-        "steps": 1,
-        "interval": 1,
-        "lr": 0.0015,
-        "patience": 10,
-        "max_new_tokens": 10,
-        "max_checkpoints": 1,
+        "runtime": {
+            "training": True,
+            "batch_size": 2,
+            "block_size": 4,
+            "steps": 1,
+            "interval": 1,
+            "lr": 0.0015,
+            "patience": 10,
+            "max_new_tokens": 10,
+            "max_checkpoints": 1,
+        }
     }
 
 
@@ -82,6 +84,22 @@ def test_base_model_compute_loss():
     loss = model.compute_loss(logits, idx, targets)
     assert loss is not None
     assert loss > 0
+
+
+def test_base_model_check_patience_loss_improvement():
+    model = BaseLanguageModel()
+    overfit, best_loss, wait = model.check_patience(2, 1, 1)
+    assert not overfit
+    assert best_loss == 1
+    assert wait == 0
+
+
+def test_base_model_check_patience_no_loss_improvement():
+    model = BaseLanguageModel()
+    overfit, best_loss, wait = model.check_patience(1, 2, 9)
+    assert overfit
+    assert best_loss == 1
+    assert wait == 10
 
 
 def test_base_model_new_token():

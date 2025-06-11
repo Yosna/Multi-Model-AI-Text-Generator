@@ -18,8 +18,13 @@
     }
   },
 
-  "save_model": true,
-  "token_level": "word",
+  "model_options": {
+    "save_model": true,
+    "token_level": "word",
+    "auto_tuning": true,
+    "save_tuning": true
+  },
+
   "models": {
     "bigram": {
       "runtime": {
@@ -83,13 +88,13 @@
       },
       "hparams": {
         "batch_size": 32,
-        "block_size": 128,
+        "block_size": 64,
         "lr": 0.001,
-        "embedding_dim": 64,
+        "embedding_dim": 32,
         "max_seq_len": 128,
-        "num_heads": 4,
-        "ff_dim": 256,
-        "num_layers": 3
+        "num_heads": 2,
+        "ff_dim": 128,
+        "num_layers": 2
       }
     },
     "distilgpt2": {
@@ -102,8 +107,6 @@
     }
   },
 
-  "auto_tuning": true,
-  "save_tuning": true,
   "tuning_ranges": {
     "batch_size": {
       "type": "int",
@@ -160,10 +163,10 @@
   },
 
   "visualization": {
+    "save_plot": true,
     "show_plot": true,
     "smooth_loss": true,
     "smooth_val_loss": true,
-    "weight": 0.9,
-    "save_data": true
+    "weight": 0.9
   }
 }

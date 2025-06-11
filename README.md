@@ -126,8 +126,13 @@ All behavior is driven by a single `config.json` file.
     }
   },
 
-  "save_model": true,
-  "token_level": "word",
+  "model_options": {
+    "save_model": true,
+    "token_level": "word",
+    "auto_tuning": true,
+    "save_tuning": true
+  },
+
   "models": {
     "bigram": {
       "runtime": {
@@ -191,13 +196,13 @@ All behavior is driven by a single `config.json` file.
       },
       "hparams": {
         "batch_size": 32,
-        "block_size": 128,
+        "block_size": 64,
         "lr": 0.001,
-        "embedding_dim": 64,
+        "embedding_dim": 32,
         "max_seq_len": 128,
-        "num_heads": 4,
-        "ff_dim": 256,
-        "num_layers": 3
+        "num_heads": 2,
+        "ff_dim": 128,
+        "num_layers": 2
       }
     },
     "distilgpt2": {
@@ -210,8 +215,6 @@ All behavior is driven by a single `config.json` file.
     }
   },
 
-  "auto_tuning": true,
-  "save_tuning": true,
   "tuning_ranges": {
     "batch_size": {
       "type": "int",
@@ -268,11 +271,11 @@ All behavior is driven by a single `config.json` file.
   },
 
   "visualization": {
+    "save_plot": true,
     "show_plot": true,
     "smooth_loss": true,
     "smooth_val_loss": true,
-    "weight": 0.9,
-    "save_data": true
+    "weight": 0.9
   }
 }
 ```
@@ -282,8 +285,8 @@ All behavior is driven by a single `config.json` file.
 You can configure:
 
 - **Datasets** (`datasets`): Source and location to pull from
-- **Tokenization** (`token_level`): Character ("char") and word ("word") tokenization level for all models
-- **Runtime** (`runtime`): Training and generation settings
+- **Model Options** (`model_options`): Model saving, tokenization level, and hyperparameter tuning options
+- **Runtime** (`runtime`): Training and generation settings for each model
 - **Hyperparameters** (`hparams`): Model-specific architecture and optimization parameters
 - **Visualization** (`visualization`): Loss plotting, smoothing, and saving options
 - **Tuning Ranges** (`tuning_ranges`): Hyperparameter search spaces for automatic tuning
@@ -453,7 +456,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 118 unit tests, 100% coverage, 625 stmts / 0 miss
+- **Statistics**: 120 unit tests, 100% coverage, 630 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest

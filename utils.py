@@ -274,25 +274,23 @@ def get_model(
     return model
 
 
-def save_checkpoint(
-    model: BaseLM, step: int, val_loss: float, max_checkpoints: int
-) -> None:
+def save_checkpoint(model: BaseLM, step: int, val_loss: float) -> None:
     """
     Save a model checkpoint and rotate older checkpoints.
 
-    The oldest checkpoint is removed and the rest are shifted up by 1. The
-    current model state and metadata are saved as checkpoint_1.
+    Saves the current model state and metadata, rotating out older checkpoints
+    based on the model's max_checkpoints attribute. Checkpoints are stored in
+    numbered directories (checkpoint_1, checkpoint_2, etc.).
 
     Args:
         model (BaseLM): Model instance with dir_path, ckpt_dir, ckpt_path, meta_path.
         step (int): Current training step.
         val_loss (float): Validation loss at this step.
-        max_checkpoints (int): Maximum number of checkpoints to keep.
     """
     os.makedirs(model.dir_path, exist_ok=True)
 
     # Shift existing checkpoints up by 1 (e.g. checkpoint_1 -> checkpoint_2)
-    for i in reversed(range(1, max_checkpoints)):
+    for i in reversed(range(1, model.max_checkpoints)):
         prev_dir = os.path.join(model.dir_path, f"checkpoint_{i}")
         next_dir = os.path.join(model.dir_path, f"checkpoint_{i + 1}")
 
@@ -310,7 +308,7 @@ def save_checkpoint(
         "step": step,
         "val_loss": val_loss,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-        "config": get_config(model.cfg_path, "models")[model.name],
+        "config": get_config(model.cfg_path, "models").get(model.name, {}),
     }
 
     with open(model.meta_path, "w", encoding="utf-8") as f:
