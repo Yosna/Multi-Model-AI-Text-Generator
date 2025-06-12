@@ -41,6 +41,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Adam optimizer with early stopping
 - Automatic checkpoint rotation and resumption
 - Multinomial sampling for randomized generation
+- Temperature scaling for controllable randomness in generation (configurable via `temperature`)
 - Comprehensive CLI interface with model selection, runtime, and hyperparameter configuration
 - Full unit test coverage (100%) for all modules
 - Tests include generation and training for all models, tuning, visualization, CLI behavior, and argument parsing helpers
@@ -130,7 +131,8 @@ All behavior is driven by a single `config.json` file.
     "save_model": true,
     "token_level": "word",
     "auto_tuning": true,
-    "save_tuning": true
+    "save_tuning": true,
+    "temperature": 1.0
   },
 
   "models": {
@@ -285,7 +287,7 @@ All behavior is driven by a single `config.json` file.
 You can configure:
 
 - **Datasets** (`datasets`): Source and location to pull from
-- **Model Options** (`model_options`): Model saving, tokenization level, and hyperparameter tuning options
+- **Model Options** (`model_options`): Model saving, tokenization level, hyperparameter tuning options, and temperature scaling for generation
 - **Runtime** (`runtime`): Training and generation settings for each model
 - **Hyperparameters** (`hparams`): Model-specific architecture and optimization parameters
 - **Visualization** (`visualization`): Loss plotting, smoothing, and saving options
@@ -375,6 +377,8 @@ python main.py --model transformer
 
 The output will begin with a randomly selected seed character or word (depending on `token_level`) and continue for the configured number of tokens.
 
+You can control the randomness of generation using the `temperature` argument in `config.json`. Lower values make output more deterministic; higher values make it more random.
+
 ## Loss Visualization
 
 - Plotting both training and validation loss curves
@@ -456,7 +460,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 120 unit tests, 100% coverage, 630 stmts / 0 miss
+- **Statistics**: 120 unit tests, 100% coverage, 631 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest

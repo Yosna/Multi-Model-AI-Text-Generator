@@ -96,7 +96,6 @@ def validate_data(
         with torch.no_grad():
             logits = model(xb)
             val_loss = model.compute_loss(logits, xb, yb).item()
-            print(f"\n\n\nval_loss: {val_loss}\n\n\n")
 
         print(f"Step: {step:<10} loss: {loss:<20.10f} val_loss: {val_loss:<20.10f}")
 

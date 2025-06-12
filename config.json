@@ -7,7 +7,7 @@
         "extension": "txt"
       },
       "library": {
-        "data_name": "science"
+        "data_name": "news"
       },
       "huggingface": {
         "data_name": "pubmed_qa",
@@ -21,8 +21,9 @@
   "model_options": {
     "save_model": true,
     "token_level": "word",
-    "auto_tuning": true,
-    "save_tuning": true
+    "auto_tuning": false,
+    "save_tuning": true,
+    "temperature": 1.0
   },
 
   "models": {
@@ -61,7 +62,7 @@
     },
     "gru": {
       "runtime": {
-        "training": true,
+        "training": false,
         "steps": 50000,
         "interval": 500,
         "patience": 10,

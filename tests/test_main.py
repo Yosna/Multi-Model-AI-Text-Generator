@@ -180,6 +180,7 @@ def test_run_model_training(tmp_path, model):
 )
 def test_run_model_generation(tmp_path, model):
     run_model_ran_successfully = False
+    build_file(tmp_path, "config.json", get_test_config(tmp_path, training=False))
     try:
         run_model(
             model=MockModel(tmp_path, model, training=False),

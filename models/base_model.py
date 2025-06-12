@@ -162,7 +162,7 @@ class BaseLanguageModel(nn.Module):
                 print(f"Best Loss this training session: {best_loss}")
         return overfit, best_loss, wait
 
-    def new_token(self, logits: torch.Tensor) -> torch.Tensor:
+    def new_token(self, logits: torch.Tensor, temperature: float = 1.0) -> torch.Tensor:
         """
         Generate the next token in the sequence using the model's predictions.
 
@@ -178,7 +178,7 @@ class BaseLanguageModel(nn.Module):
         # Focus on the last time step
         logits = logits[:, -1, :]
         # Convert logits to probabilities
-        probs = F.softmax(logits, dim=-1)
+        probs = F.softmax(logits / temperature, dim=-1)
         # Sample from the probability distribution
         next_idx = torch.multinomial(probs, num_samples=1)
         return next_idx

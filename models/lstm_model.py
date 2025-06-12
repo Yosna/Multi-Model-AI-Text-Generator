@@ -122,7 +122,9 @@ class LSTMLanguageModel(BaseLanguageModel):
         return logits
 
     @torch.no_grad()
-    def generate(self, start_idx: int, itos: dict[int, str]) -> str:
+    def generate(
+        self, start_idx: int, itos: dict[int, str], temperature: float = 1.0
+    ) -> str:
         """
         Generate new text by sampling from the model's predictions.
         Uses multinomial sampling to add randomness to the output.
@@ -145,7 +147,7 @@ class LSTMLanguageModel(BaseLanguageModel):
         for _ in range(self.max_new_tokens):
             # Get predictions and update hidden state for next step
             logits = self(idx)
-            next_idx = self.new_token(logits)
+            next_idx = self.new_token(logits, temperature)
             # Prepare input for next iteration
             idx = next_idx
             generated = torch.cat((generated, next_idx.flatten()), dim=0)
