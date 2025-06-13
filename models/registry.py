@@ -1,3 +1,5 @@
+"""Model registry for dynamic selection and instantiation of language models."""
+
 from models.base_model import BaseLanguageModel
 from models.bigram_model import BigramLanguageModel
 from models.lstm_model import LSTMLanguageModel

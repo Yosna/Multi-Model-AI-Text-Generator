@@ -1,46 +1,79 @@
-"""
-Hyperparameter tuning utilities using Optuna for language model training.
+"""Hyperparameter tuning utilities using Optuna for language model training.
 
-Includes:
-- optimize_and_train: Main entry point for auto-tuning and training.
-- make_objective: Creates an Optuna objective function for hyperparameter search.
+This module provides automated hyperparameter optimization using Optuna.
+It supports multiple pruning strategies (Median, Successive Halving, and Hyperband)
+and persists optimization studies to SQLite for later analysis.
+
+Key Features:
+- Automated hyperparameter search with configurable number of trials
+- Multiple pruning strategies to optimize search efficiency
+- Study persistence for long-running optimizations
+- Integration with Optuna Dashboard for visualization
+- Configurable tuning ranges and optimization parameters
+
+Example:
+    To enable hyperparameter tuning, set in config.json:
+    {
+        "tuning_options": {
+            "auto_tuning": true,
+            "save_study": true,
+            "pruner": "hyperband"
+        }
+    }
 """
 
 from models.registry import ModelRegistry as Model
 import torch
 import optuna
-from optuna.pruners import MedianPruner
-import json
+from optuna import pruners
 from training import train
 from utils import save_config, load_config, get_config, get_model
 
 
-def optimize_and_train(model: Model.BaseLM, data: torch.Tensor, n_trials: int = 50):
-    """
-    Run hyperparameter optimization (if enabled) and train the model.
+def optimize_and_train(model: Model.BaseLM, data: torch.Tensor):
+    """Run hyperparameter optimization (if enabled) and train the model.
 
-    Runs Optuna hyperparameter search using the objective from make_objective.
-    Updates model hyperparameters and config if save_tuning is enabled.
-    Always runs final training after tuning. Optional and enabled by default.
+    This function manages the complete optimization and training workflow:
+    1. Loads configuration and checks if auto-tuning is enabled
+    2. Creates and runs an Optuna study if tuning is enabled
+    3. Updates model hyperparameters with best found values
+    4. Runs final training with optimized parameters
+
+    The optimization process can be configured through config.json:
+    - Number of trials
+    - Pruning strategy
+    - Study persistence
+    - Step divisor for faster evaluation
 
     Args:
-        model (Model.BaseLM): The model instance
+        model (Model.BaseLM): The model instance being trained
         data (torch.Tensor): Full dataset as a 1D tensor of encoded characters.
+
+    Returns:
+        tuple: (trained model, validation losses) from the final training run
     """
     config = load_config(model.cfg_path)
-    hparams = config["models"][model.name]["hparams"] or {}
+    model_config = config.get("models", {}).get(model.name, {})
+    hparams = model_config.get("hparams", {})
+    tuning_options = config.get("tuning_options", {})
 
-    if config.get("model_options", {}).get("auto_tuning", False):
+    if tuning_options.get("auto_tuning", False):
+        save_study = tuning_options.get("save_study", False)
+        n_trials = tuning_options.get("n_trials", 50)
+
         objective = make_objective(model, data)
         study = optuna.create_study(
+            study_name=f"{model.name}_loss_tuning",
             direction="minimize",
-            pruner=MedianPruner(n_startup_trials=5, n_warmup_steps=model.interval * 2),
+            storage="sqlite:///optuna.db" if save_study else None,
+            load_if_exists=save_study,
+            pruner=create_pruner(model),
         )
         study.optimize(objective, n_trials=n_trials)
 
         best_params = study.best_trial.params
 
-        if config.get("model_options", {}).get("save_tuning", False):
+        if tuning_options.get("save_tuning", False):
             hparams.update(best_params)
             save_config(config, model.cfg_path)
 
@@ -48,18 +81,23 @@ def optimize_and_train(model: Model.BaseLM, data: torch.Tensor, n_trials: int = 
 
 
 def make_objective(model: Model.BaseLM, data: torch.Tensor):
-    """
-    Create an Optuna objective function for hyperparameter search.
+    """Create an Optuna objective function for hyperparameter search.
 
     The returned function suggests values for each hyperparameter in the tuning
     ranges, runs a training step, and returns the final validation loss.
 
+    The objective function handles three types of hyperparameters:
+    - Integer parameters (e.g., batch_size)
+    - Float parameters (e.g., learning_rate)
+    - Categorical parameters (e.g., optimizer type)
+
     Args:
-        model (Model.BaseLM): The model instance
+        model (Model.BaseLM): The model instance being trained
         data (torch.Tensor): Full dataset as a 1D tensor of encoded characters.
 
     Returns:
         Callable[[optuna.Trial], float]: Objective function for Optuna study.
+            The function returns the final validation loss for the trial.
 
     Raises:
         ValueError: If model.vocab_size is not set.
@@ -67,12 +105,16 @@ def make_objective(model: Model.BaseLM, data: torch.Tensor):
     if not model.vocab_size:
         raise ValueError("Vocab size is not set for the current model")
 
-    models = get_config(model.cfg_path, "models")
-    tune = get_config(model.cfg_path, "tuning_ranges")
+    config = load_config(model.cfg_path)
+    models = config.get("models", {})
+    model_config = models.get(model.name, {})
+    tuning_options = config.get("tuning_options", {})
+    tune = config.get("tuning_ranges", {})
     model = get_model(
         Model, model.name, models, model.cfg_path, model.vocab_size, model.token_level
     )
-    hparams = models[model.name].get("hparams", {})
+    hparams = model_config.get("hparams", {})
+    step_divisor = tuning_options.get("step_divisor", 10)
 
     def objective(trial: optuna.Trial):
         for key in hparams.keys():
@@ -87,8 +129,68 @@ def make_objective(model: Model.BaseLM, data: torch.Tensor):
             elif tune[key] and tune[key]["type"] == "categorical":
                 hparams[key] = trial.suggest_categorical(key, tune[key]["values"])
 
-        _, val_losses = train(model, data, trial=trial, step_divisor=10)
+        _, val_losses = train(model, data, trial=trial, step_divisor=step_divisor)
 
         return val_losses[-1]
 
     return objective
+
+
+def create_pruner(model: Model.BaseLM):
+    """Create an Optuna pruner based on configuration settings.
+
+    This function supports three pruning strategies:
+    - MedianPruner: Prunes based on the median of previous trials
+    - SuccessiveHalvingPruner: Prunes based on resource allocation
+    - HyperbandPruner: Prunes based on bracket-based resource allocation
+
+    The pruner configuration is read from config.json under the "pruners" section.
+    Each pruner type has its own configuration parameters.
+
+    Args:
+        model (Model.BaseLM): The model instance being trained
+
+    Returns:
+        Optional[optuna.pruners.BasePruner]: Configured pruner instance or None if
+            an unknown pruner type is specified.
+    """
+    config = load_config(model.cfg_path)
+    tuning_options = config.get("tuning_options", {})
+    pruner_name = tuning_options.get("pruner", "median")
+
+    if pruner_name == "median":
+        median = get_config(model.cfg_path, "pruners").get("median", {})
+        pruner = pruners.MedianPruner(
+            n_startup_trials=median.get("n_startup_trials", 5),
+            n_warmup_steps=median.get("n_warmup_steps", 1000),
+        )
+    elif pruner_name == "halving":
+        halving = get_config(model.cfg_path, "pruners").get("halving", {})
+        pruner = pruners.SuccessiveHalvingPruner(
+            min_resource=halving.get("min_resource", 1),
+            reduction_factor=halving.get("reduction_factor", 2),
+            min_early_stopping_rate=halving.get("min_early_stopping_rate", 0),
+        )
+    elif pruner_name == "hyperband":
+        hyperband = get_config(model.cfg_path, "pruners").get("hyperband", {})
+        pruner = pruners.HyperbandPruner(
+            min_resource=hyperband.get("min_resource", 1),
+            max_resource=model.steps // tuning_options.get("step_divisor", 10),
+            reduction_factor=hyperband.get("reduction_factor", 2),
+        )
+    else:
+        print(
+            f"""
+            Unknown pruner: {pruner_name}
+            Please use one of the following pruners:
+            - median
+            - halving
+            - hyperband
+            The pruner can be set from your config:
+            config.json -> tuning_options -> pruner
+            No pruner will be used for this study.
+            """
+        )
+        pruner = None
+
+    return pruner

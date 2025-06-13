@@ -1,7 +1,8 @@
-"""
-Command-line interface for configuring, training, generating, and managing
-language models. Handles argument parsing, runtime overrides, and user
-interaction for all supported models and features.
+"""Command-line interface for settings configuration.
+
+Allows configuring, training, generating, and managing language models.
+Handles argument parsing, runtime overrides, and user interaction for all
+supported models and features.
 """
 
 import argparse
@@ -14,8 +15,7 @@ FALSE_STRINGS = ["false", "off", "no", "0"]
 
 
 def true_string(arg):
-    """
-    Check if a string represents a true boolean value.
+    """Check if a string represents a true boolean value.
 
     Args:
         arg: The value to check as a string
@@ -27,8 +27,7 @@ def true_string(arg):
 
 
 def false_string(arg):
-    """
-    Check if a string represents a false boolean value.
+    """Check if a string represents a false boolean value.
 
     Args:
         arg: The value to check as a string
@@ -40,8 +39,7 @@ def false_string(arg):
 
 
 def set_arg_bool(arg: Any) -> Any:
-    """
-    Convert a string to a boolean value if it matches true/false patterns.
+    """Convert a string to a boolean value if it matches true/false patterns.
 
     Args:
         arg: The argument to potentially convert to boolean
@@ -57,8 +55,7 @@ def set_arg_bool(arg: Any) -> Any:
 
 
 def parse_config(args: argparse.Namespace, cfg_path: str):
-    """
-    Parse command line arguments and update the model configuration file.
+    """Parse command line arguments and update the model configuration file.
 
     - Loads the existing configuration
     - Updates the model's runtime settings based on provided arguments
@@ -82,7 +79,7 @@ def parse_config(args: argparse.Namespace, cfg_path: str):
             if hasattr(args, key):
                 arg = getattr(args, key)
                 arg = arg if isinstance(arg, int | float) else set_arg_bool(arg)
-                matching_type = type(setting[key]) == type(arg)
+                matching_type = isinstance(arg, type(setting[key]))
                 if arg is not None and matching_type:
                     setting[key] = arg
     save_config(config, cfg_path)
@@ -91,8 +88,7 @@ def parse_config(args: argparse.Namespace, cfg_path: str):
 def add_arg(
     parser: argparse.ArgumentParser, name: str, type: type, metavar: str, help: str
 ) -> None:
-    """
-    Add a command-line argument to the parser with consistent defaults.
+    """Add a command-line argument to the parser with consistent defaults.
 
     Args:
         parser (argparse.ArgumentParser): The argument parser to add the argument to
@@ -105,8 +101,7 @@ def add_arg(
 
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments for model selection and runtime configuration.
+    """Parse command-line arguments for model selection and runtime configuration.
 
     Returns:
         argparse.Namespace: Parsed arguments for model selection and runtime settings
@@ -121,8 +116,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_model(parser: argparse.ArgumentParser) -> None:
-    """
-    Add model selection argument to the parser.
+    """Add model selection argument to the parser.
 
     Args:
         parser (argparse.ArgumentParser): The argument parser for the model argument
@@ -138,8 +132,7 @@ def parse_model(parser: argparse.ArgumentParser) -> None:
 
 
 def parse_runtime(parser: argparse.ArgumentParser) -> None:
-    """
-    Add runtime configuration arguments to the parser.
+    """Add runtime configuration arguments to the parser.
 
     Parses arguments for:
     - Training mode toggle (training)
@@ -169,8 +162,7 @@ def parse_runtime(parser: argparse.ArgumentParser) -> None:
 
 
 def parse_hparams(parser: argparse.ArgumentParser) -> None:
-    """
-    Add hyperparameter configuration arguments to the parser.
+    """Add hyperparameter configuration arguments to the parser.
 
     Parses arguments for:
     - Batch size for training (batch_size)

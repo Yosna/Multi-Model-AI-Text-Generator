@@ -21,6 +21,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - [Datasets](#datasets)
 - [Configuration](#configuration)
 - [Hyperparameter Tuning](#hyperparameter-tuning)
+- [Optuna Dashboard](#optuna-dashboard)
 - [Usage](#usage)
 - [Loss Visualization](#loss-visualization)
 - [GPU Acceleration](#gpu-acceleration)
@@ -38,6 +39,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Modular model registry for Bigram, LSTM, GRU, Transformer, and DistilGPT2 (inference-only)
 - Configurable training and hyperparameter tuning via `config.json`
 - Automatic hyperparameter tuning with Optuna
+- Optuna Dashboard for visualizing hyperparameter optimization studies
 - Adam optimizer with early stopping
 - Automatic checkpoint rotation and resumption
 - Multinomial sampling for randomized generation
@@ -130,8 +132,6 @@ All behavior is driven by a single `config.json` file.
   "model_options": {
     "save_model": true,
     "token_level": "word",
-    "auto_tuning": true,
-    "save_tuning": true,
     "temperature": 1.0
   },
 
@@ -217,6 +217,31 @@ All behavior is driven by a single `config.json` file.
     }
   },
 
+  "pruners": {
+    "median": {
+      "n_startup_trials": 5,
+      "n_warmup_steps": 1000
+    },
+    "halving": {
+      "min_resource": 5,
+      "reduction_factor": 2,
+      "min_early_stopping_rate": 1
+    },
+    "hyperband": {
+      "min_resource": 5,
+      "reduction_factor": 2
+    }
+  },
+
+  "tuning_options": {
+    "auto_tuning": true,
+    "save_tuning": true,
+    "save_study": true,
+    "n_trials": 100,
+    "pruner": "hyperband",
+    "step_divisor": 10
+  },
+
   "tuning_ranges": {
     "batch_size": {
       "type": "int",
@@ -287,11 +312,13 @@ All behavior is driven by a single `config.json` file.
 You can configure:
 
 - **Datasets** (`datasets`): Source and location to pull from
-- **Model Options** (`model_options`): Model saving, tokenization level, hyperparameter tuning options, and temperature scaling for generation
+- **Model Options** (`model_options`): Model saving, tokenization level, and temperature scaling for generation
 - **Runtime** (`runtime`): Training and generation settings for each model
 - **Hyperparameters** (`hparams`): Model-specific architecture and optimization parameters
 - **Visualization** (`visualization`): Loss plotting, smoothing, and saving options
 - **Tuning Ranges** (`tuning_ranges`): Hyperparameter search spaces for automatic tuning
+- **Pruners** (`pruners`): Configuration for Optuna pruners
+- **Tuning Options** (`tuning_options`): Configuration for Optuna tuning options
 
 ## Hyperparameter Tuning
 
@@ -302,6 +329,19 @@ Automatic hyperparameter tuning is supported via [Optuna](https://optuna.org/).
 - Tuning is integrated into the training workflow and can be controlled via the CLI or config.
 - Results are saved and can be used to update model hyperparameters automatically if `"save_tuning": true`.
 - Tunable fields include: `batch_size`, `block_size`, `lr`, `embedding_dim`, `hidden_size`, `num_layers`, `max_seq_len`, `num_heads`, `ff_dim`.
+- Pruners and tuning options are configurable in `config.json`.
+
+## Optuna Dashboard
+
+Visualize your hyperparameter optimization studies interactively with Optuna Dashboard.
+
+- Launch with:
+  ```bash
+  python run_dashboard.py
+  ```
+- The dashboard will open at **localhost:8080**.
+- Requires `optuna-dashboard` (install with `pip install optuna-dashboard`).
+- Shows study history, parameter importance, and more.
 
 ## Usage
 
@@ -460,7 +500,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 120 unit tests, 100% coverage, 631 stmts / 0 miss
+- **Statistics**: 129 unit tests, 100% coverage, 666 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest
@@ -479,8 +519,6 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 
 ## Future Improvements
 
-- Add temperature scaling for more controllable sampling
-- Add support for additional pruners via config.json
 - Add code profiling tools to identify performance bottlenecks
 - Add learning rate scheduling during training
 - Add visualization for transformer attention

@@ -21,8 +21,6 @@
   "model_options": {
     "save_model": true,
     "token_level": "word",
-    "auto_tuning": false,
-    "save_tuning": true,
     "temperature": 1.0
   },
 
@@ -62,7 +60,7 @@
     },
     "gru": {
       "runtime": {
-        "training": false,
+        "training": true,
         "steps": 50000,
         "interval": 500,
         "patience": 10,
@@ -106,6 +104,31 @@
         "block_size": 32
       }
     }
+  },
+
+  "pruners": {
+    "median": {
+      "n_startup_trials": 5,
+      "n_warmup_steps": 1000
+    },
+    "halving": {
+      "min_resource": 5,
+      "reduction_factor": 2,
+      "min_early_stopping_rate": 1
+    },
+    "hyperband": {
+      "min_resource": 5,
+      "reduction_factor": 2
+    }
+  },
+
+  "tuning_options": {
+    "auto_tuning": true,
+    "save_tuning": true,
+    "save_study": true,
+    "n_trials": 100,
+    "pruner": "hyperband",
+    "step_divisor": 10
   },
 
   "tuning_ranges": {

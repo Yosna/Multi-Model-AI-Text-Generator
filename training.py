@@ -1,5 +1,4 @@
-"""
-Training utilities for model optimization, validation, and early stopping.
+"""Training utilities for model optimization, validation, and early stopping.
 
 Includes:
 - train: Main training loop with early stopping and checkpointing.
@@ -19,20 +18,26 @@ def train(
     trial: Trial | None = None,
     step_divisor: int = 1,
 ) -> tuple[list[float], list[float]]:
-    """
-    Train the model using Adam optimization with early stopping.
+    """Train the model.
+
+    Uses Adam optimization with early stopping.
     Saves model checkpoints after validation loss improves.
     Supports hyperparameter optimization via the trial argument.
-    Optimization is through Optuna and optional.
+    Optimization uses Optuna and is optional.
 
     Args:
         model (Model.BaseLM): The model to train.
         data (torch.Tensor): Full dataset as a 1D tensor of encoded characters.
-        trial (Trial | None, optional): Optuna trial for pruning. Defaults to None.
-        step_divisor (int, optional): Trial training step divisor. Defaults to 1.
+        trial (Trial | None): Optuna trial for pruning.
+        step_divisor (int): Trial training step divisor.
+
+    Raises:
+        TrialPruned: If the trial should be pruned.
 
     Returns:
-        tuple[list[float], list[float]]: (training losses, validation losses)
+        tuple[list[float], list[float]]:
+            - training losses
+            - validation losses
     """
     optimizer = torch.optim.Adam(model.parameters(), lr=torch.tensor(model.lr))
     train_data, val_data = split_data(data)
@@ -73,8 +78,7 @@ def validate_data(
     best_loss: float,
     wait: int,
 ) -> tuple[bool, float, int]:
-    """
-    Validate the model on the validation dataset.
+    """Validate the model on the validation dataset.
 
     Args:
         model (Model.BaseLM): Model to validate
@@ -87,7 +91,10 @@ def validate_data(
         wait (int): Number of steps without improvement
 
     Returns:
-        Tuple of (overfit, best_loss, wait)
+        tuple[bool, float, int]:
+            - overfit: Whether the model is overfitting
+            - best_loss: Best validation loss so far
+            - wait: Number of steps without improvement
     """
     overfit = False
     if step % model.interval == 0:
@@ -102,9 +109,8 @@ def validate_data(
         val_losses.append(val_loss)
         loss_improved = val_loss < best_loss
         full_training_run = step_divisor == 1
-        save_model = get_config(model.cfg_path, "model_options").get(
-            "save_model", False
-        )
+        model_options = get_config(model.cfg_path, "model_options")
+        save_model = model_options.get("save_model", False)
 
         if loss_improved and full_training_run and save_model:
             # Save model if validation loss improves during a full training run

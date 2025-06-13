@@ -1,5 +1,4 @@
-"""
-Utility functions for data processing, batching, configuration, and checkpointing.
+"""Utility functions for data processing, batching, configuration, and checkpointing.
 
 Includes:
 - Vocabulary and mapping creation
@@ -24,17 +23,21 @@ T = TypeVar("T")
 def build_vocab(
     text: str, token_level: str = "char"
 ) -> tuple[list[str], list[str], int]:
-    """
-    Build a sorted character vocabulary from text and return it with its size.
+    """Build a sorted character vocabulary from text and return it with its size.
 
     Args:
         text (str): Input text.
         token_level (str): Token level to use for vocabulary building.
-            Options: "char" (default), or "word".
+            Options: "char" (default), or "word"
+
     Returns:
         tuple[list[str], list[str], int]:
-            Sorted list of unique tokens, sorted list of unique characters,
-            and vocabulary size.
+            - Sorted list of unique tokens
+            - Sorted list of unique characters
+            - Vocabulary size
+
+    Raises:
+        ValueError: If token_level is not "char" or "word"
     """
     if token_level == "char":
         tokens = list(text)
@@ -49,14 +52,15 @@ def build_vocab(
 
 
 def create_mappings(tokens: list[str]) -> tuple[dict[str, int], dict[int, str]]:
-    """
-    Create character-to-index and index-to-character mappings.
+    """Create character-to-index and index-to-character mappings.
 
     Args:
-        chars (list[str]): List of unique characters.
+        tokens (list[str]): List of unique tokens.
 
     Returns:
-        tuple[dict[str, int], dict[int, str]]: stoi and itos mappings.
+        tuple[dict[str, int], dict[int, str]]:
+            - stoi: character-to-index mapping
+            - itos: index-to-character mapping
     """
     stoi = {token: i for i, token in enumerate(tokens)}
     itos = {i: token for i, token in enumerate(tokens)}
@@ -64,8 +68,7 @@ def create_mappings(tokens: list[str]) -> tuple[dict[str, int], dict[int, str]]:
 
 
 def encode_data(tokens: list[str], stoi: dict[str, int]) -> torch.Tensor:
-    """
-    Encode text into a tensor of integer indices using the provided mapping.
+    """Encode text into a tensor of integer indices using the provided mapping.
 
     Args:
         tokens (list[str]): Input tokens.
@@ -80,8 +83,7 @@ def encode_data(tokens: list[str], stoi: dict[str, int]) -> torch.Tensor:
 
 
 def decode_data(data: torch.Tensor, itos: dict[int, str], token_level: str) -> str:
-    """
-    Decode a tensor of integer indices back into a string using the mapping.
+    """Decode a tensor of integer indices back into a string using the mapping.
 
     Args:
         data (torch.Tensor): Tensor of indices.
@@ -98,14 +100,15 @@ def decode_data(data: torch.Tensor, itos: dict[int, str], token_level: str) -> s
 
 
 def split_data(data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-    """
-    Split data tensor into training and validation sets (90/10 split).
+    """Split data tensor into training and validation sets (90/10 split).
 
     Args:
         data (torch.Tensor): Input data tensor.
 
     Returns:
-        tuple[torch.Tensor, torch.Tensor]: (train_data, val_data)
+        tuple[torch.Tensor, torch.Tensor]:
+            - train_data: Training data tensor
+            - val_data: Validation data tensor
     """
     split_idx = int(0.9 * len(data))
     train_data = data[:split_idx]
@@ -114,9 +117,8 @@ def split_data(data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
 
 
 def get_batch(model: BaseLM, data: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-    """
-    Generate a batch of data for training.
-    Returns input (x) and target (y) sequences of length block_size.
+    """Generate a batch of data for training.
+
     Sequences are stacked and targets are shifted by 1 position.
     Starting indices are randomized for each sequence in the batch.
 
@@ -126,8 +128,8 @@ def get_batch(model: BaseLM, data: torch.Tensor) -> tuple[torch.Tensor, torch.Te
 
     Returns:
         tuple[torch.Tensor, torch.Tensor]:
-            x: (batch_size, block_size) - input sequences
-            y: (batch_size, block_size) - target sequences (shifted by 1)
+            - x: (batch_size, block_size) - input sequences
+            - y: (batch_size, block_size) - target sequences (shifted by 1)
     """
     block_size = cast(int, model.block_size)
     batch_size = cast(int, model.batch_size)
@@ -138,8 +140,7 @@ def get_batch(model: BaseLM, data: torch.Tensor) -> tuple[torch.Tensor, torch.Te
 
 
 def get_metadata(path: str, key: str, default: T) -> T:
-    """
-    Retrieve a value from metadata.json; returns a default if not found.
+    """Retrieve a value from metadata.json; returns a default if not found.
 
     Args:
         path (str): Path to metadata.json.
@@ -147,7 +148,7 @@ def get_metadata(path: str, key: str, default: T) -> T:
         default (T): Default value if key is not found.
 
     Returns:
-        T: The value from metadata or the default.
+        T: Either the value from metadata or the default.
     """
     data = default
     if os.path.exists(path):
@@ -158,10 +159,10 @@ def get_metadata(path: str, key: str, default: T) -> T:
 
 
 def save_config(config: dict[str, Any], cfg_path: str) -> None:
-    """
-    Save a configuration dictionary to a JSON file.
-    Formats arrays to remove line breaks
-    Adds line breaks between top-level sections that end with '},'.
+    """Save a configuration dictionary to a JSON file.
+
+    Formats arrays to remove line breaks and adds line breaks between
+    top-level sections that end with '},'.
 
     Args:
         config (dict[str, Any]): The configuration dictionary to save
@@ -170,7 +171,14 @@ def save_config(config: dict[str, Any], cfg_path: str) -> None:
     cfg_str = json.dumps(config, indent=2)
 
     def fix_arrays(match):
-        # Extract only the numbers from the array content
+        """Extract only the numbers from the array content.
+
+        Args:
+            match (re.Match): The match from the regex search.
+
+        Returns:
+            str: The formatted string with only the numbers from the array content.
+        """
         numbers = re.findall(r"\d+", match.group(1))
         return "[" + ", ".join(numbers) + "]"
 
@@ -193,8 +201,7 @@ def save_config(config: dict[str, Any], cfg_path: str) -> None:
 
 
 def load_config(path: str) -> dict[str, Any]:
-    """
-    Load the entire config.json as a dict.
+    """Load the entire config.json as a dict.
 
     Args:
         path (str): Path to config.json.
@@ -206,9 +213,8 @@ def load_config(path: str) -> dict[str, Any]:
         return json.load(f)
 
 
-def get_config(path: str, config_name: str) -> Any:
-    """
-    Load and return the configuration dictionary for the given model.
+def get_config(path: str, config_name: str) -> dict[str, Any]:
+    """Load and return the configuration dictionary for the given model.
 
     Args:
         path (str): Path to config.json.
@@ -218,7 +224,8 @@ def get_config(path: str, config_name: str) -> Any:
         dict[str, Any]: The configuration dictionary for the model.
 
     Raises:
-        KeyError: If no config is found for the given name.
+        KeyError: If no config is found for the given config name.
+        ValueError: If no value is found for the given config name.
     """
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -238,8 +245,7 @@ def get_model(
     vocab_size: int,
     token_level: str,
 ) -> BaseLM:
-    """
-    Create and return a language model based on the specified model type.
+    """Create and return a language model based on the specified model type.
 
     Args:
         models (type): Model registry with BigramLM, LSTMLM, TransformerLM, etc.
@@ -270,13 +276,13 @@ def get_model(
         model = models.DistilGPT2LM(config[model_name], cfg_path)
     else:
         raise ValueError(f"Unknown model type: {model_name}")
+
     model.to(model.device)
     return model
 
 
 def save_checkpoint(model: BaseLM, step: int, val_loss: float) -> None:
-    """
-    Save a model checkpoint and rotate older checkpoints.
+    """Save a model checkpoint and rotate older checkpoints.
 
     Saves the current model state and metadata, rotating out older checkpoints
     based on the model's max_checkpoints attribute. Checkpoints are stored in

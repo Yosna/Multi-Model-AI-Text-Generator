@@ -1,5 +1,4 @@
-"""
-Visualization utilities for plotting training and validation loss curves.
+"""Visualization utilities for plotting training and validation loss curves.
 
 Includes:
 - plot_losses: Plot and optionally save/smooth loss curves.
@@ -21,8 +20,7 @@ def plot_losses(
     step_divisor: int,
     visualization: dict[str, bool | float],
 ) -> None:
-    """
-    Plot and training/validation loss curves for a model.
+    """Plot and optionally save and smooth training and validation loss curves.
 
     Creates a plot of training and validation losses over time, with optional
     smoothing and saving capabilities. The visualization dictionary controls
@@ -67,8 +65,7 @@ def plot_losses(
 
 
 def smooth(values: list[float], weight: float) -> list[float]:
-    """
-    Apply exponential smoothing to a list of values.
+    """Apply exponential smoothing to a list of values.
 
     Args:
         values (list[float]): The input values to smooth.
@@ -90,14 +87,14 @@ def smooth(values: list[float], weight: float) -> list[float]:
 
 
 def save_plot(model: Model.BaseLM, plt: Any, plot_name: str) -> None:
-    """
-    Save the current matplotlib plot to the model's plot directory.
+    """Save the current matplotlib plot to the model's plot directory.
+
     Plots are timestamped for unique naming.
 
     Args:
         model (nn.Module): The model instance.
             (must have a 'plot_dir' and 'name' attribute)
-        plt (matplotlib.pyplot): The matplotlib pyplot module.
+        plt (Any): The matplotlib pyplot module.
         plot_name (str): A label for the plot (used in the filename).
     """
     os.makedirs(model.plot_dir, exist_ok=True)

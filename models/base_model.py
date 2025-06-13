@@ -1,3 +1,5 @@
+"""Base class and shared utilities for all language models."""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,8 +8,7 @@ from typing import Any
 
 
 class BaseLanguageModel(nn.Module):
-    """
-    Base class for all language models in the project.
+    """Base class for all language models in the project.
 
     This abstract base class provides common functionality for language models:
     - Device management (CPU/GPU)
@@ -48,18 +49,18 @@ class BaseLanguageModel(nn.Module):
         vocab_size: int | None = None,
         token_level: str = "char",
     ) -> None:
-        """
-        Initialize the base language model.
+        """Initialize the base language model.
 
         Args:
             model_name (str): Name of the model, used for checkpoint paths.
             config (dict): Configuration dictionary for the model.
             cfg_path (str): Path to the config file.
-            vocab_size (int | None): Number of unique tokens
-                (this is only None for transformer models)
+            vocab_size (int | None): Number of unique tokens.
+            token_level (str): Token level to use for vocabulary building.
+                Options: "char" (default), or "word"
 
         Notes:
-            All keys in config["runtime"] are set as attributes on the model instance.
+            config["runtime"] keys are set as attributes on the model instance.
         """
         super().__init__()
         self.name: str = model_name
@@ -84,8 +85,7 @@ class BaseLanguageModel(nn.Module):
     def train_step(
         self, xb: torch.Tensor, yb: torch.Tensor, optimizer: torch.optim.Optimizer
     ) -> float:
-        """
-        Perform a single training step for the model.
+        """Perform a single training step for the model.
 
         Args:
             xb (torch.Tensor): Input batch tensor.
@@ -108,8 +108,7 @@ class BaseLanguageModel(nn.Module):
         idx: torch.Tensor,
         targets: torch.Tensor,
     ) -> torch.Tensor:
-        """
-        Compute the cross entropy loss between model predictions and targets.
+        """Compute the cross entropy loss between model predictions and targets.
 
         Args:
             logits (torch.Tensor): Model predictions of shape (B, T, C)
@@ -158,19 +157,19 @@ class BaseLanguageModel(nn.Module):
             wait += 1
             if wait >= self.patience:
                 overfit = True
-                print(f"Stopping due to overfitting.")
+                print("Stopping due to overfitting.")
                 print(f"Best Loss this training session: {best_loss}")
         return overfit, best_loss, wait
 
     def new_token(self, logits: torch.Tensor, temperature: float = 1.0) -> torch.Tensor:
-        """
-        Generate the next token in the sequence using the model's predictions.
+        """Generate the next token in the sequence using the model's predictions.
 
         Args:
             logits (torch.Tensor): Model predictions of shape (B, T, C)
                 - B: batch size
                 - T: sequence length
                 - C: vocabulary size
+            temperature (float): Temperature for sampling (default: 1.0)
 
         Returns:
             torch.Tensor: Next token index of shape (B, 1)
@@ -184,15 +183,29 @@ class BaseLanguageModel(nn.Module):
         return next_idx
 
     def generate(self, *_, **__):
-        """
-        Generate text from the model.
+        """Generate text from the model.
+
         This method must be implemented by subclasses.
+
+        Args:
+            *_: Unused arguments
+            **__: Unused keyword arguments
+
+        Raises:
+            NotImplementedError: If the method is not implemented by a subclass.
         """
         raise NotImplementedError("Method implemented in subclasses")
 
     def run(self, *_, **__):
-        """
-        Run the model on input data.
+        """Run the model on input data.
+
         This method must be implemented by subclasses.
+
+        Args:
+            *_: Unused arguments
+            **__: Unused keyword arguments
+
+        Raises:
+            NotImplementedError: If the method is not implemented by a subclass.
         """
         raise NotImplementedError("Method implemented in subclasses")

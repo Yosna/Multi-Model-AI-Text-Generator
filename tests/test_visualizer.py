@@ -32,11 +32,8 @@ def test_plot_losses(tmp_path):
     losses = [5.0, 4.0, 3.0, 2.0, 1.0]
     val_losses = [1.0, 2.0, 3.0, 4.0, 5.0]
     steps = [i for i in range(len(losses))]
-    save_plot, show_plot = None, None
 
-    with patch("visualizer.save_plot") as save_plot, patch(
-        "visualizer.plt.show"
-    ) as show_plot:
+    with patch("visualizer.save_plot") as save, patch("visualizer.plt.show") as show:
         plot_losses(
             MockModel(tmp_path),
             losses,
@@ -49,10 +46,8 @@ def test_plot_losses(tmp_path):
     plt_losses = axes.lines[0]
     plt_val_losses = axes.lines[1]
     plt.close()
-    print(plt_losses.get_ydata())
-    print(plt_val_losses.get_ydata())
-    save_plot.assert_called_once()
-    show_plot.assert_called_once()
+    save.assert_called_once()
+    show.assert_called_once()
     assert axes.get_title() == "Loss over Steps for mock_model.py"
     assert axes.get_ylabel() == "Loss"
     assert axes.get_xlabel() == "Steps"

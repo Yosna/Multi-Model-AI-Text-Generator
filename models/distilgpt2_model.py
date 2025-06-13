@@ -1,3 +1,5 @@
+"""DistilGPT-2 wrapper for language modeling and text generation."""
+
 import torch
 import random
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -6,8 +8,7 @@ from typing import Any
 
 
 class DistilGPT2LanguageModel(BaseLanguageModel):
-    """
-    A language model that integrates a transformer (DistilGPT2) for text generation.
+    """A language model that integrates a transformer (DistilGPT2) for text generation.
 
     Architecture:
         - Uses Hugging Face's tokenizer and model for causal language modeling.
@@ -28,12 +29,14 @@ class DistilGPT2LanguageModel(BaseLanguageModel):
     block_size: int
 
     def __init__(self, config: dict[str, Any], cfg_path: str) -> None:
-        """
-        Initialize the transformer language model and load pre-trained weights.
+        """Initialize the transformer language model and load pre-trained weights.
 
         Args:
             config (dict): Configuration dictionary for the model.
             cfg_path (str): Path to the config file.
+
+        Notes:
+            config["hparams"] keys are set as attributes on the model instance.
         """
         super().__init__(
             model_name="distilgpt2",
@@ -50,8 +53,7 @@ class DistilGPT2LanguageModel(BaseLanguageModel):
         self.block_size = int(self.block_size)
 
     def run(self, text: str) -> str:
-        """
-        Generate text using the pre-trained transformer model.
+        """Generate text using the pre-trained transformer model.
 
         Selects a random prompt from the input text, encodes it, and generates new
         text using the transformer model. Returns the generated text as a string.

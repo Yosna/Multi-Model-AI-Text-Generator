@@ -2,9 +2,10 @@ from models.registry import ModelRegistry as Model
 import pytest
 import torch
 import torch.nn as nn
+import optuna
 import json
 import os
-from tuning import optimize_and_train, make_objective
+from tuning import optimize_and_train, make_objective, create_pruner
 
 
 def get_test_config():
@@ -12,8 +13,6 @@ def get_test_config():
         "model_options": {
             "save_model": False,
             "token_level": "char",
-            "auto_tuning": True,
-            "save_tuning": True,
         },
         "models": {
             "bigram": {
@@ -32,6 +31,29 @@ def get_test_config():
                     "num_layers": 2,
                 },
             }
+        },
+        "pruners": {
+            "median": {
+                "n_startup_trials": 10,
+                "n_warmup_steps": 10,
+            },
+            "halving": {
+                "min_resource": 10,
+                "reduction_factor": 10,
+                "min_early_stopping_rate": 10,
+            },
+            "hyperband": {
+                "min_resource": 10,
+                "reduction_factor": 10,
+            },
+        },
+        "tuning_options": {
+            "auto_tuning": True,
+            "save_tuning": True,
+            "save_study": False,
+            "n_trials": 1,
+            "pruner": "",
+            "step_divisor": 10,
         },
         "tuning_ranges": {
             "batch_size": {
@@ -93,7 +115,7 @@ def test_optimize_and_train(tmp_path):
     build_file(tmp_path, "config.json", json.dumps(get_test_config()))
     model = MockModel(str(tmp_path))
     data = torch.tensor([i for i in range(100)])
-    losses, val_losses = optimize_and_train(model, data, n_trials=1)
+    losses, val_losses = optimize_and_train(model, data)
     assert len(losses) > 0
     assert len(val_losses) > 0
     assert losses[0] > 0
@@ -119,3 +141,59 @@ def test_make_objective_error(tmp_path):
     with pytest.raises(ValueError):
         model.vocab_size = None
         make_objective(model, data)
+
+
+@pytest.mark.parametrize("pruner", ["median", "halving", "hyperband"])
+def test_create_pruner_no_config(tmp_path, pruner):
+    config = get_test_config()
+    config["pruners"] = {}
+    config["tuning_options"]["pruner"] = pruner
+    build_file(tmp_path, "config.json", json.dumps(config))
+    model = MockModel(str(tmp_path))
+    pruner = create_pruner(model)
+    assert pruner is not None
+    assert isinstance(pruner, optuna.pruners.BasePruner)
+
+
+def test_create_pruner_median(tmp_path):
+    config = get_test_config()
+    config["tuning_options"]["pruner"] = "median"
+    build_file(tmp_path, "config.json", json.dumps(config))
+    model = MockModel(str(tmp_path))
+    pruner = create_pruner(model)
+    assert isinstance(pruner, optuna.pruners.MedianPruner)
+    assert pruner._n_startup_trials == 10
+    assert pruner._n_warmup_steps == 10
+
+
+def test_create_pruner_halving(tmp_path):
+    config = get_test_config()
+    config["tuning_options"]["pruner"] = "halving"
+    build_file(tmp_path, "config.json", json.dumps(config))
+    model = MockModel(str(tmp_path))
+    pruner = create_pruner(model)
+    assert isinstance(pruner, optuna.pruners.SuccessiveHalvingPruner)
+    assert pruner._min_resource == 10
+    assert pruner._reduction_factor == 10
+    assert pruner._min_early_stopping_rate == 10
+
+
+def test_create_pruner_hyperband(tmp_path):
+    config = get_test_config()
+    config["tuning_options"]["pruner"] = "hyperband"
+    build_file(tmp_path, "config.json", json.dumps(config))
+    model = MockModel(str(tmp_path))
+    pruner = create_pruner(model)
+    assert isinstance(pruner, optuna.pruners.HyperbandPruner)
+    assert pruner._min_resource == 10
+    assert pruner._max_resource == 100
+    assert pruner._reduction_factor == 10
+
+
+def test_create_pruner_none(tmp_path):
+    config = get_test_config()
+    config["tuning_options"]["pruner"] = "invalid"
+    build_file(tmp_path, "config.json", json.dumps(config))
+    model = MockModel(str(tmp_path))
+    pruner = create_pruner(model)
+    assert pruner is None

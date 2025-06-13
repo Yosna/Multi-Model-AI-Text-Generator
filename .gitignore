@@ -13,6 +13,9 @@ checkpoints/
 plots/
 *.png
 
+# Database files
+*.db
+
 # VSCode/Cursor settings
 .vscode/
 

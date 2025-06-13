@@ -1,5 +1,4 @@
-"""
-Main entry point for running and training language models.
+"""Main entry point for running and training language models.
 
 Handles argument parsing, dataset loading, model initialization, and dispatches
 training or text generation based on configuration and model type.
@@ -20,12 +19,10 @@ from utils import (
 from cli import parse_args, parse_config
 from tuning import optimize_and_train
 from library import get_dataset
-from typing import Any
 
 
 def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
-    """
-    Prepare data, initialize model, and run training or generation.
+    """Prepare data, initialize model, and run training or generation.
 
     Args:
         args (argparse.Namespace): Parsed command-line arguments.
@@ -53,8 +50,7 @@ def validate_model(
     stoi: dict[str, int],
     itos: dict[int, str],
 ) -> None:
-    """
-    Validate the type of model to determine the appropriate run method.
+    """Validate the type of model to determine the appropriate run method.
 
     Args:
         model (Model.BaseLM): The model instance.
@@ -76,8 +72,8 @@ def run_model(
     stoi: dict[str, int],
     itos: dict[int, str],
 ) -> None:
-    """
-    Run training or text generation for the model.
+    """Run training or text generation for the model.
+
     Loads from checkpoint if available.
     Randomizes seed character for generation.
 
@@ -86,9 +82,6 @@ def run_model(
         data (torch.Tensor): Encoded dataset tensor.
         stoi (dict[str, int]): Character-to-index mapping.
         itos (dict[int, str]): Index-to-character mapping.
-
-    Returns:
-        None
     """
     if os.path.exists(model.ckpt_path):
         try:

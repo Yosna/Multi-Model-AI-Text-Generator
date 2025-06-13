@@ -1,6 +1,7 @@
-"""
-Dataset loading utilities for local files, Hugging Face datasets, and a built-in
-library of pre-configured datasets.
+"""Dataset loading utilities for model training.
+
+Supports local files, Hugging Face datasets, and
+a built-in library of pre-configured datasets.
 
 Includes:
 - DATASET_LIBRARY: Pre-configured dataset metadata for quick access.
@@ -65,8 +66,8 @@ DATASET_LIBRARY = {
 
 
 def _load_from_local(directory: str, extension: str) -> str:
-    """
-    Load and concatenate all files with a given extension from a directory.
+    """Load and concatenate all files with a given extension from a directory.
+
     Both arguments are configurable in `config.json`.
 
     Args:
@@ -91,8 +92,8 @@ def _load_from_huggingface(
     split: str,
     field: str,
 ) -> str:
-    """
-    Load and extract text from a Hugging Face dataset.
+    """Load and extract text from a Hugging Face dataset.
+
     All arguments are configurable in `config.json`.
 
     Args:
@@ -103,6 +104,9 @@ def _load_from_huggingface(
 
     Returns:
         str: Newline-separated text from the selected field.
+
+    Raises:
+        ValueError: If the field is not found in the dataset.
     """
     dataset = load_dataset(data_name, config_name, split=split)
     if isinstance(dataset, dict):
@@ -117,15 +121,14 @@ def _load_from_huggingface(
 
 
 def get_dataset(source: str, locations: dict[str, dict[str, str]]) -> str:
-    """
-    Load and return a text dataset from the specified source.
+    """Load and return a text dataset from the specified source.
 
     Args:
         source (str): The source of the dataset. Must be one of:
             - "local": Load from local text files in a directory.
             - "library": Load from a pre-configured dataset in the built-in library.
             - "huggingface": Load from a custom Hugging Face dataset.
-        locations (dict): A dictionary containing configuration for each possible source.
+        locations (dict): A dictionary with configuration for each possible source.
             - For "local": expects a dict with "directory" and "extension" keys.
             - For "library": expects a dict with "data_name" key.
             - For "huggingface": expects a dict with Hugging Face dataset parameters.
