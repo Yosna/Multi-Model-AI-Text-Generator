@@ -12,7 +12,7 @@ This project implements five text generation language models using PyTorch:
 - **Transformer model** — a trainable transformer supporting both training and generation
 - **DistilGPT2 model** — inference-only; uses a pre-trained Hugging Face transformer for high-quality text generation
 
-The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, and model/CLI behavior (**current coverage**: 100%).
+The codebase is modular, config-driven, and supports training, checkpointing, early stopping, hyperparameter tuning, and generation from any model via CLI. Comprehensive unit tests are included for all major modules, including training, library, utilities, visualization, tuning, model/CLI behavior, and profiling (**current coverage**: 100%).
 
 ## Table of Contents
 
@@ -22,6 +22,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - [Configuration](#configuration)
 - [Hyperparameter Tuning](#hyperparameter-tuning)
 - [Optuna Dashboard](#optuna-dashboard)
+- [Profiling](#profiling)
 - [Usage](#usage)
 - [Loss Visualization](#loss-visualization)
 - [GPU Acceleration](#gpu-acceleration)
@@ -44,13 +45,14 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Automatic checkpoint rotation and resumption
 - Multinomial sampling for randomized generation
 - Temperature scaling for controllable randomness in generation (configurable via `temperature`)
-- Comprehensive CLI interface with model selection, runtime, and hyperparameter configuration
+- Comprehensive CLI interface with model selection, runtime, hyperparameter, model options, tuning, and visualization configuration
 - Full unit test coverage (100%) for all modules
-- Tests include generation and training for all models, tuning, visualization, CLI behavior, and argument parsing helpers
+- Tests include generation and training for all models, tuning, visualization, CLI behavior, argument parsing helpers, and profiling
 - Loss visualization with matplotlib, including smoothing and saving plots
 - GPU-accelerated training by default
 - Integrated dataset library with pre-configured datasets
 - Support for local files, Hugging Face datasets, and built-in library datasets
+- Built-in profiling for performance analysis
 
 ## Model Architectures
 
@@ -315,10 +317,10 @@ You can configure:
 - **Model Options** (`model_options`): Model saving, tokenization level, and temperature scaling for generation
 - **Runtime** (`runtime`): Training and generation settings for each model
 - **Hyperparameters** (`hparams`): Model-specific architecture and optimization parameters
-- **Visualization** (`visualization`): Loss plotting, smoothing, and saving options
-- **Tuning Ranges** (`tuning_ranges`): Hyperparameter search spaces for automatic tuning
 - **Pruners** (`pruners`): Configuration for Optuna pruners
-- **Tuning Options** (`tuning_options`): Configuration for Optuna tuning options
+- **Tuning Options** (`tuning_options`): Optuna tuning configuration, pruner, and trial settings
+- **Tuning Ranges** (`tuning_ranges`): Hyperparameter search spaces for automatic tuning
+- **Visualization** (`visualization`): Loss plotting, smoothing, and saving options
 
 ## Hyperparameter Tuning
 
@@ -343,35 +345,43 @@ Visualize your hyperparameter optimization studies interactively with Optuna Das
 - Requires `optuna-dashboard` (install with `pip install optuna-dashboard`).
 - Shows study history, parameter importance, and more.
 
+## Profiling
+
+A built-in profiling tool is included to help you analyze performance bottlenecks in your code.
+
+- The profiler is located at `profiling/profiler.py`.
+- It runs the main application under `cProfile` and saves filtered, timestamped reports to `profiling/profiles/`.
+- Reports are filtered to exclude virtual environment and bootstrap code, and show the top functions by calls, time, and cumulative time.
+- You can run the profiler with:
+  ```bash
+  python -m profiling.profiler
+  ```
+- You can also import and use the profiler programmatically in your own scripts or tests.
+- The profiling tool is unit tested with 100% coverage.
+
 ## Usage
 
 ### Command Line Interface
 
-The project provides a flexible CLI for controlling model behavior:
+The project provides a flexible CLI for controlling model options, runtime and hyperparameters, tuning options, and visualization:
+
+- **Model Options** (`--save-model`, `--token-level`, `--temperature`)
+- **Runtime** (`--training`, `--steps`, `--interval`, etc.)
+- **Hyperparameters** (`--batch-size`, `--block-size`, `--lr`, etc.)
+- **Tuning Options** (`--auto-tuning`, `--save-tuning`, `--save-study`, etc.)
+- **Visualization** (`--save-plot`, `--show-plot`, `--smooth-loss`, etc.)
+
+For a full list of arguments, run:
 
 ```bash
-# Basic usage with default model (transformer)
-python main.py
-
-# Select a specific model
-python main.py --model [bigram | lstm | gru | transformer | distilgpt2]
-
-# Training configuration
-python main.py --model lstm --training true --steps 1000 --interval 100
-
-# Generation configuration
-python main.py --model gru --training false --max-new-tokens 200
-
-# Checkpoint management
-python main.py --model lstm --max-checkpoints 5
+python main.py --help
 ```
 
-#### Available CLI arguments:
-
+<details><summary><b>Available CLI Arguments:</b> (<i>click to expand</i>)</summary>
 _\*arg for all models, \*\*arg for all models excluding distilgpt2_
 
 - `--model`: Select model type (**default**: transformer, **options**: [bigram | lstm | gru | transformer | distilgpt2])
-- `--training`: Toggle training mode (**options**: [true | false]) \*\*
+- `--training`: Toggle training mode \*\*
 - `--steps`: Number of training steps \*\*
 - `--interval`: Validation interval during training \*\*
 - `--patience`: Early stopping patience \*\*
@@ -386,11 +396,26 @@ _\*arg for all models, \*\*arg for all models excluding distilgpt2_
 - `--max-seq-len`: Override maximum sequence length (transformer)
 - `--num-heads`: Override number of attention heads (transformer)
 - `--ff-dim`: Override feedforward dimension (transformer)
+- `--save-model`: Override model saving (model_options)
+- `--token-level`: Override tokenization level (model_options)
+- `--temperature`: Override temperature for generation (model_options)
+- `--auto-tuning`: Enable/disable hyperparameter tuning (tuning_options)
+- `--save-tuning`: Enable/disable saving tuned hyperparameters (tuning_options)
+- `--save-study`: Enable/disable saving Optuna study (tuning_options)
+- `--n-trials`: Number of Optuna trials (tuning_options)
+- `--pruner`: Pruner type for Optuna (tuning_options)
+- `--step-divisor`: Step divisor for tuning (tuning_options)
+- `--save-plot`: Enable/disable saving loss plots (visualization)
+- `--show-plot`: Enable/disable showing loss plots (visualization)
+- `--smooth-loss`: Enable/disable smoothing of loss curves (visualization)
+- `--smooth-val-loss`: Enable/disable smoothing of validation loss (visualization)
+- `--weight`: Smoothing weight (visualization)
+</details>
 
 #### Notes
 
 - The model argument will default to `--model transformer` if omitted.
-- Any runtime arguments omitted will default to the respective value defined in `config.json`.
+- Any arguments omitted will default to the respective value defined in `config.json`.
 - Boolean flags support flexible input: `true`, `false`, `on`, `off`, `yes`, `no`, `1`, `0`.
 - **distilgpt2** uses a pre-trained Hugging Face model and is inference-only (cannot be trained).
 
@@ -497,10 +522,10 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 
 ## Testing
 
-- The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, and model/CLI behavior.
+- The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, model/CLI behavior, and profiling.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 129 unit tests, 100% coverage, 666 stmts / 0 miss
+- **Statistics**: 136 unit tests, 100% coverage, 757 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest
@@ -515,11 +540,10 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
   pytest tests/test_utils.py
   ```
 - Test output will show which tests passed or failed, and coverage will report which lines are tested.
-- Coverage includes data processing, plotting, model logic, CLI argument parsing, tuning, and more.
+- Coverage includes data processing, plotting, model logic, CLI argument parsing, tuning, profiling, and more.
 
 ## Future Improvements
 
-- Add code profiling tools to identify performance bottlenecks
 - Add learning rate scheduling during training
 - Add visualization for transformer attention
 - Add beam search to model generation

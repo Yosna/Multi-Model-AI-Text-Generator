@@ -12,6 +12,8 @@ from utils import load_config, save_config
 # Constants for boolean string values
 TRUE_STRINGS = ["true", "on", "yes", "1"]
 FALSE_STRINGS = ["false", "off", "no", "0"]
+# Constant for the boolean argument metavars
+BOOL_METAVAR = f"[{', '.join(TRUE_STRINGS)} | {', '.join(FALSE_STRINGS)}]"
 
 
 def true_string(arg):
@@ -45,12 +47,12 @@ def set_arg_bool(arg: Any) -> Any:
         arg: The argument to potentially convert to boolean
 
     Returns:
-        Any: Boolean if matching true/false patterns, otherwise no change
+        Any: Boolean if matching true/false patterns, otherwise the original value
     """
     if true_string(arg):
-        return True
+        arg = True
     elif false_string(arg):
-        return False
+        arg = False
     return arg
 
 
@@ -67,11 +69,20 @@ def parse_config(args: argparse.Namespace, cfg_path: str):
         cfg_path (str): Path to the configuration file
     """
     config = load_config(cfg_path)
-    model_config = config["models"][args.model]
+    models = config.get("models", {})
+    model_options = config.get("model_options", {})
+    model_config = models.get(args.model, {})
+    runtime = model_config.get("runtime", {})
+    hparams = model_config.get("hparams", {})
+    tuning_options = config.get("tuning_options", {})
+    visualization = config.get("visualization", {})
 
     config_sections = {
-        "runtime": model_config["runtime"],
-        "hparams": model_config["hparams"],
+        "model_options": model_options,
+        "runtime": runtime,
+        "hparams": hparams,
+        "tuning_options": tuning_options,
+        "visualization": visualization,
     }
 
     for setting in config_sections.values():
@@ -109,8 +120,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a language model")
 
     parse_model(parser)
+    parse_model_options(parser)
     parse_runtime(parser)
     parse_hparams(parser)
+    parse_tuning_options(parser)
+    parse_visualization(parser)
 
     return parser.parse_args()
 
@@ -131,6 +145,26 @@ def parse_model(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def parse_model_options(parser: argparse.ArgumentParser) -> None:
+    """Add model option configuration arguments to the parser.
+
+    Parses arguments for:
+    - Model checkpoint saving toggle (save_model)
+    - Tokenization level (token_level)
+    - Temperature (temperature)
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser for model options
+    """
+    save_model_help = "Override save_model in config (section: model_options)"
+    token_level_help = "Override token_level in config (section: model_options)"
+    temperature_help = "Override temperature in config (section: model_options)"
+
+    add_arg(parser, "--save-model", str, BOOL_METAVAR, save_model_help)
+    add_arg(parser, "--token-level", str, "[char | word]", token_level_help)
+    add_arg(parser, "--temperature", float, "[float]", temperature_help)
+
+
 def parse_runtime(parser: argparse.ArgumentParser) -> None:
     """Add runtime configuration arguments to the parser.
 
@@ -145,7 +179,6 @@ def parse_runtime(parser: argparse.ArgumentParser) -> None:
     Args:
         parser (argparse.ArgumentParser): The argument parser for runtime values
     """
-    training_metavar = f"[{', '.join(TRUE_STRINGS)} | {', '.join(FALSE_STRINGS)}]"
     training_help = "Override training in config (section: runtime)"
     steps_help = "Override steps in config (section: runtime)"
     interval_help = "Override interval in config (section: runtime)"
@@ -153,7 +186,7 @@ def parse_runtime(parser: argparse.ArgumentParser) -> None:
     max_new_tokens_help = "Override max_new_tokens in config (section: runtime)"
     max_checkpoints_help = "Override max_checkpoints in config (section: runtime)"
 
-    add_arg(parser, "--training", str, training_metavar, training_help)
+    add_arg(parser, "--training", str, BOOL_METAVAR, training_help)
     add_arg(parser, "--steps", int, "[int]", steps_help)
     add_arg(parser, "--interval", int, "[int]", interval_help)
     add_arg(parser, "--patience", int, "[int]", patience_help)
@@ -197,3 +230,58 @@ def parse_hparams(parser: argparse.ArgumentParser) -> None:
     add_arg(parser, "--max-seq-len", int, "[int]", max_seq_len_help)
     add_arg(parser, "--num-heads", int, "[int]", num_heads_help)
     add_arg(parser, "--ff-dim", int, "[int]", ff_dim_help)
+
+
+def parse_tuning_options(parser: argparse.ArgumentParser) -> None:
+    """Add tuning option configuration arguments to the parser.
+
+    Parses arguments for:
+    - Hyperparameter optimization toggle (auto_tuning)
+    - Tuned hyperparameters save toggle (save_tuning)
+    - Optuna study save toggle (save_study)
+    - Number of trials (n_trials)
+    - Type of pruner to use for studies (pruner)
+    - Step divisor for trials; divides steps in runtime (step_divisor)
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser for tuning options
+    """
+    auto_tuning_help = "Override auto_tuning in config (section: tuning_options)"
+    save_tuning_help = "Override save_tuning in config (section: tuning_options)"
+    save_study_help = "Override save_study in config (section: tuning_options)"
+    n_trials_help = "Override n_trials in config (section: tuning_options)"
+    pruner_help = "Override pruner in config (section: tuning_options)"
+    step_divisor_help = "Override step_divisor in config (section: tuning_options)"
+
+    add_arg(parser, "--auto-tuning", str, BOOL_METAVAR, auto_tuning_help)
+    add_arg(parser, "--save-tuning", str, BOOL_METAVAR, save_tuning_help)
+    add_arg(parser, "--save-study", str, BOOL_METAVAR, save_study_help)
+    add_arg(parser, "--n-trials", int, "[int]", n_trials_help)
+    add_arg(parser, "--pruner", str, "[median | halving | hyperband]", pruner_help)
+    add_arg(parser, "--step-divisor", int, "[int]", step_divisor_help)
+
+
+def parse_visualization(parser: argparse.ArgumentParser) -> None:
+    """Add visualization configuration arguments to the parser.
+
+    Parses arguments for:
+    - Plot saving toggle (save_plot)
+    - Plot showing toggle (show_plot)
+    - Loss curve smoothing toggle (smooth_loss)
+    - Validation loss curve smoothing toggle (smooth_val_loss)
+    - Weight for smoothing aggressiveness (weight)
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser for visualization options
+    """
+    save_plot_help = "Override save_plot in config (section: visualization)"
+    show_plot_help = "Override show_plot in config (section: visualization)"
+    smooth_loss_help = "Override smooth_loss in config (section: visualization)"
+    smooth_val_loss_help = "Override smooth_val_loss in config (section: visualization)"
+    weight_help = "Override weight in config (section: visualization)"
+
+    add_arg(parser, "--save-plot", str, BOOL_METAVAR, save_plot_help)
+    add_arg(parser, "--show-plot", str, BOOL_METAVAR, show_plot_help)
+    add_arg(parser, "--smooth-loss", str, BOOL_METAVAR, smooth_loss_help)
+    add_arg(parser, "--smooth-val-loss", str, BOOL_METAVAR, smooth_val_loss_help)
+    add_arg(parser, "--weight", float, "[float]", weight_help)

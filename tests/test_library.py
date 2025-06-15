@@ -44,30 +44,21 @@ def test_local_extension_filtering(tmp_path):
 
 
 def test_load_from_huggingface():
-    text = _load_from_huggingface("ag_news", None, "train", "text")
-    assert text is not None
-    assert len(text) > 0
+    text = _load_from_huggingface("Yosna/test-dataset", None, "train", "text")
+    assert text == "Hello, World!"
 
 
 def test_load_from_huggingface_dict():
     dataset = {"train": MockSplit([{"text": "Hello, World!"}])}
     with patch("library.load_dataset", return_value=dataset):
-        text = _load_from_huggingface("ag_news", None, "train", "text")
+        text = _load_from_huggingface("Yosna/test-dataset", None, "train", "text")
         assert text == "Hello, World!"
 
 
 def test_get_dataset_library():
-    datasets = {
-        "source": "library",
-        "locations": {
-            "library": {
-                "data_name": "news",
-            }
-        },
-    }
-    text = get_dataset(datasets["source"], datasets["locations"])
-    assert text is not None
-    assert len(text) > 0
+    with patch("library._load_from_huggingface", return_value="Hello, World!"):
+        text = get_dataset("library", {"library": {"data_name": "news"}})
+    assert text == "Hello, World!"
 
 
 def test_get_dataset_library_invalid_source():
@@ -88,7 +79,7 @@ def test_get_dataset_huggingface():
         "source": "huggingface",
         "locations": {
             "huggingface": {
-                "data_name": "ag_news",
+                "data_name": "Yosna/test-dataset",
                 "config_name": None,
                 "split": "train",
                 "field": "text",
@@ -96,8 +87,7 @@ def test_get_dataset_huggingface():
         },
     }
     text = get_dataset(datasets["source"], datasets["locations"])
-    assert text is not None
-    assert len(text) > 0
+    assert text == "Hello, World!"
 
 
 def test_get_dataset_invalid_source():
@@ -105,7 +95,7 @@ def test_get_dataset_invalid_source():
         "source": "invalid",
         "locations": {
             "huggingface": {
-                "data_name": "ag_news",
+                "data_name": "Yosna/test-dataset",
                 "config_name": None,
                 "split": "train",
                 "field": "text",
@@ -121,7 +111,7 @@ def test_get_dataset_invalid_field():
         "source": "huggingface",
         "locations": {
             "huggingface": {
-                "data_name": "ag_news",
+                "data_name": "Yosna/test-dataset",
                 "config_name": None,
                 "split": "train",
                 "field": "invalid",

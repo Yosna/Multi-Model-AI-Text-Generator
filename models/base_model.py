@@ -155,6 +155,7 @@ class BaseLanguageModel(nn.Module):
             wait = 0
         else:
             wait += 1
+            print(f"Loss did not improve. Waiting... ({wait}/{self.patience})")
             if wait >= self.patience:
                 overfit = True
                 print("Stopping due to overfitting.")

@@ -9,20 +9,26 @@ from cli import set_arg_bool, add_arg, parse_config, parse_args
 
 def get_test_config():
     return {
+        "model_options": {"model_options_passed": False},
         "models": {
             "mock": {
                 "runtime": {"runtime_passed": False},
                 "hparams": {"hparams_passed": False},
             }
-        }
+        },
+        "tuning_options": {"tuning_options_passed": False},
+        "visualization": {"visualization_passed": False},
     }
 
 
 def get_test_args():
     args = argparse.Namespace()
     args.model = "mock"
+    args.model_options_passed = "true"
     args.runtime_passed = "true"
     args.hparams_passed = "true"
+    args.tuning_options_passed = "true"
+    args.visualization_passed = "true"
     return args
 
 
@@ -44,8 +50,11 @@ def test_parse_config(tmp_path):
     parse_config(args, cfg_path)
     with open(cfg_path, "r", encoding="utf-8") as f:
         parsed_config = json.load(f)
+    assert parsed_config["model_options"]["model_options_passed"]
     assert parsed_config["models"]["mock"]["runtime"]["runtime_passed"]
     assert parsed_config["models"]["mock"]["hparams"]["hparams_passed"]
+    assert parsed_config["tuning_options"]["tuning_options_passed"]
+    assert parsed_config["visualization"]["visualization_passed"]
 
 
 def test_add_arg():
@@ -86,6 +95,20 @@ def test_parse_args_invalid(invalid):
     with patch.object(sys, "argv", cli_args):
         with pytest.raises(SystemExit):
             parse_args()
+
+
+def test_parse_args_model_options():
+    cli_args = [
+        "main.py",
+        *["--save-model", "true"],
+        *["--token-level", "char"],
+        *["--temperature", "1.0"],
+    ]
+    with patch.object(sys, "argv", cli_args):
+        args = parse_args()
+        assert args.save_model
+        assert args.token_level == "char"
+        assert args.temperature == 1.0
 
 
 def test_parse_args_runtime():
@@ -132,3 +155,41 @@ def test_parse_args_hparams():
         assert args.max_seq_len == 10
         assert args.num_heads == 10
         assert args.ff_dim == 10
+
+
+def test_parse_args_tuning_options():
+    cli_args = [
+        "main.py",
+        *["--auto-tuning", "true"],
+        *["--save-tuning", "true"],
+        *["--save-study", "true"],
+        *["--n-trials", "10"],
+        *["--pruner", "hyperband"],
+        *["--step-divisor", "10"],
+    ]
+    with patch.object(sys, "argv", cli_args):
+        args = parse_args()
+        assert args.auto_tuning
+        assert args.save_tuning
+        assert args.save_study
+        assert args.n_trials == 10
+        assert args.pruner == "hyperband"
+        assert args.step_divisor == 10
+
+
+def test_parse_args_visualization():
+    cli_args = [
+        "main.py",
+        *["--save-plot", "true"],
+        *["--show-plot", "true"],
+        *["--smooth-loss", "true"],
+        *["--smooth-val-loss", "true"],
+        *["--weight", "0.5"],
+    ]
+    with patch.object(sys, "argv", cli_args):
+        args = parse_args()
+        assert args.save_plot
+        assert args.show_plot
+        assert args.smooth_loss
+        assert args.smooth_val_loss
+        assert args.weight == 0.5

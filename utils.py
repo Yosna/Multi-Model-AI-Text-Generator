@@ -320,4 +320,4 @@ def save_checkpoint(model: BaseLM, step: int, val_loss: float) -> None:
     with open(model.meta_path, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=4)
 
-    print(f"Saved checkpoint to {model.ckpt_path}")
+    print(f"Saved step {step} checkpoint to {model.ckpt_path}")
