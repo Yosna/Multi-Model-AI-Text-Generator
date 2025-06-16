@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 from models.base_model import BaseLanguageModel
-from utils import decode_data
+from utils.data_utils import decode_data
 from typing import Any
 
 

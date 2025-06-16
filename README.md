@@ -42,7 +42,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Automatic hyperparameter tuning with Optuna
 - Optuna Dashboard for visualizing hyperparameter optimization studies
 - Adam optimizer with early stopping
-- Automatic checkpoint rotation and resumption
+- Automatic checkpoint rotation and resumption with metadata tracking
 - Multinomial sampling for randomized generation
 - Temperature scaling for controllable randomness in generation (configurable via `temperature`)
 - Comprehensive CLI interface with model selection, runtime, hyperparameter, model options, tuning, and visualization configuration
@@ -53,6 +53,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Integrated dataset library with pre-configured datasets
 - Support for local files, Hugging Face datasets, and built-in library datasets
 - Built-in profiling for performance analysis
+- **Statistics**: 136 unit tests, 100% coverage, 772 stmts / 0 miss
 
 ## Model Architectures
 
@@ -377,8 +378,9 @@ For a full list of arguments, run:
 python main.py --help
 ```
 
-<details><summary><b>Available CLI Arguments:</b> (<i>click to expand</i>)</summary>
-_\*arg for all models, \*\*arg for all models excluding distilgpt2_
+<details><summary><b>Available CLI Arguments:</b> (<i>click to expand</i>)</summary><br>
+
+\*_arg for all models_, \*\*_arg for all models excluding distilgpt2_
 
 - `--model`: Select model type (**default**: transformer, **options**: [bigram | lstm | gru | transformer | distilgpt2])
 - `--training`: Toggle training mode \*\*
@@ -525,7 +527,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, model/CLI behavior, and profiling.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 136 unit tests, 100% coverage, 757 stmts / 0 miss
+- **Statistics**: 136 unit tests, 100% coverage, 772 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest

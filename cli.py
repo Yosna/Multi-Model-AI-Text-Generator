@@ -7,7 +7,7 @@ supported models and features.
 
 import argparse
 from typing import Any
-from utils import load_config, save_config
+from utils.io_utils import load_config, save_config
 
 # Constants for boolean string values
 TRUE_STRINGS = ["true", "on", "yes", "1"]
@@ -16,7 +16,7 @@ FALSE_STRINGS = ["false", "off", "no", "0"]
 BOOL_METAVAR = f"[{', '.join(TRUE_STRINGS)} | {', '.join(FALSE_STRINGS)}]"
 
 
-def true_string(arg):
+def true_string(arg: str) -> bool:
     """Check if a string represents a true boolean value.
 
     Args:
@@ -28,7 +28,7 @@ def true_string(arg):
     return str(arg).lower() in TRUE_STRINGS
 
 
-def false_string(arg):
+def false_string(arg: str) -> bool:
     """Check if a string represents a false boolean value.
 
     Args:
@@ -56,7 +56,7 @@ def set_arg_bool(arg: Any) -> Any:
     return arg
 
 
-def parse_config(args: argparse.Namespace, cfg_path: str):
+def parse_config(args: argparse.Namespace, cfg_path: str) -> None:
     """Parse command line arguments and update the model configuration file.
 
     - Loads the existing configuration

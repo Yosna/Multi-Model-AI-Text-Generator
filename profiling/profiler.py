@@ -1,11 +1,12 @@
 """Profiler for running and saving performance profiles of the main application."""
 
-import cProfile
-import pstats
 import argparse
+import cProfile
 import datetime
-import os
 import io
+import os
+import pstats
+
 from main import main
 
 

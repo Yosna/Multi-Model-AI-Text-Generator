@@ -1,10 +1,16 @@
 """Base class and shared utilities for all language models."""
 
+import json
+import os
+import shutil
+import time
+from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import os
-from typing import Any
+
+from utils.io_utils import get_config
 
 
 class BaseLanguageModel(nn.Module):
@@ -182,6 +188,46 @@ class BaseLanguageModel(nn.Module):
         # Sample from the probability distribution
         next_idx = torch.multinomial(probs, num_samples=1)
         return next_idx
+
+    def save_checkpoint(self, step: int, val_loss: float) -> None:
+        """Save a model checkpoint and rotate older checkpoints.
+
+        Saves the current model state and metadata, rotating out older checkpoints
+        based on the model's max_checkpoints attribute. Checkpoints are stored in
+        numbered directories (checkpoint_1, checkpoint_2, etc.).
+
+        Args:
+            step (int): Current training step.
+            val_loss (float): Validation loss at this step.
+        """
+        os.makedirs(self.dir_path, exist_ok=True)
+
+        # Shift existing checkpoints up by 1 (e.g. checkpoint_1 -> checkpoint_2)
+        for i in reversed(range(1, self.max_checkpoints)):
+            prev_dir = os.path.join(self.dir_path, f"checkpoint_{i}")
+            next_dir = os.path.join(self.dir_path, f"checkpoint_{i + 1}")
+
+            if os.path.exists(next_dir):
+                shutil.rmtree(next_dir)
+
+            if os.path.exists(prev_dir):
+                shutil.move(prev_dir, next_dir)
+
+        # Save current model state and metadata
+        os.makedirs(self.ckpt_dir, exist_ok=True)
+        torch.save(self.state_dict(), self.ckpt_path)
+
+        metadata = {
+            "step": step,
+            "val_loss": val_loss,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+            "config": get_config(self.cfg_path, "models").get(self.name, {}),
+        }
+
+        with open(self.meta_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=4)
+
+        print(f"Saved step {step} checkpoint to {self.ckpt_path}")
 
     def generate(self, *_, **__):
         """Generate text from the model.
