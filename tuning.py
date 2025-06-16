@@ -22,13 +22,14 @@ Example:
     }
 """
 
-from models.registry import ModelRegistry as Model
-import torch
 import optuna
+import torch
 from optuna import pruners
+
+from models.registry import ModelRegistry as Model
 from training import train
+from utils.io_utils import get_config, load_config, save_config
 from utils.model_utils import get_model
-from utils.io_utils import save_config, load_config, get_config
 
 
 def optimize_and_train(model: Model.BaseLM, data: torch.Tensor):

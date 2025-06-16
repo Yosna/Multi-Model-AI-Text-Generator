@@ -1,5 +1,6 @@
-from utils.data_utils import decode_data, encode_data, split_data
 import torch
+
+from utils.data_utils import decode_data, encode_data, split_data
 
 
 def test_encode_data():

@@ -6,11 +6,13 @@ Includes:
 - save_plot: Save matplotlib plots with timestamped filenames.
 """
 
-from models.registry import ModelRegistry as Model
-import matplotlib.pyplot as plt
 import os
 from datetime import datetime
 from typing import Any
+
+import matplotlib.pyplot as plt
+
+from models.registry import ModelRegistry as Model
 
 
 def plot_losses(

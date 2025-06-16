@@ -1,10 +1,12 @@
 """GRU-based language model implementation for sequence modeling."""
 
+from typing import Any
+
 import torch
 import torch.nn as nn
+
 from models.base_model import BaseLanguageModel
 from utils.data_utils import decode_data
-from typing import Any
 
 
 class GRULanguageModel(BaseLanguageModel):

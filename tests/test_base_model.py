@@ -1,10 +1,12 @@
-from models.registry import ModelRegistry as Model
-import pytest
-import torch
-import torch.nn as nn
 import json
 import os
 from typing import Any
+
+import pytest
+import torch
+import torch.nn as nn
+
+from models.registry import ModelRegistry as Model
 
 
 class BaseLanguageModel(Model.BaseLM):

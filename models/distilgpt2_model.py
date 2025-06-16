@@ -1,10 +1,12 @@
 """DistilGPT-2 wrapper for language modeling and text generation."""
 
-import torch
 import random
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from models.base_model import BaseLanguageModel
 from typing import Any
+
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from models.base_model import BaseLanguageModel
 
 
 class DistilGPT2LanguageModel(BaseLanguageModel):

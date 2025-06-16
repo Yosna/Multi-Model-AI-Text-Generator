@@ -1,12 +1,14 @@
-from models.registry import ModelRegistry as Model
-import torch
-import torch.nn as nn
+import json
 import os
 import sys
-import json
-import pytest
 from unittest.mock import patch
-from main import parse_args, main, validate_model, run_model
+
+import pytest
+import torch
+import torch.nn as nn
+
+from main import main, parse_args, run_model, validate_model
+from models.registry import ModelRegistry as Model
 
 
 def get_test_config(tmp_path, training=True):

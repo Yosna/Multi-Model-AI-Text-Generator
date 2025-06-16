@@ -1,11 +1,13 @@
-from models.registry import ModelRegistry as Model
+import glob
+import os
 from unittest.mock import patch
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import glob
-import os
-from visualizer import plot_losses, smooth, save_plot
+
+from models.registry import ModelRegistry as Model
+from visualizer import plot_losses, save_plot, smooth
 
 matplotlib.use("Agg")
 

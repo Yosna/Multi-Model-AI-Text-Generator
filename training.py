@@ -5,14 +5,16 @@ Includes:
 - validate_data: Validation and early stopping logic.
 """
 
-from models.registry import ModelRegistry as Model
+from typing import cast
+
 import torch
 from optuna import Trial, TrialPruned
-from utils.model_utils import get_batch
+
+from models.registry import ModelRegistry as Model
 from utils.data_utils import split_data
-from utils.io_utils import get_metadata, get_config
+from utils.io_utils import get_config, get_metadata
+from utils.model_utils import get_batch
 from visualizer import plot_losses
-from typing import cast
 
 
 def train(

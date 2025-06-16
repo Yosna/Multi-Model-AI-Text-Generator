@@ -1,10 +1,11 @@
-from unittest.mock import patch
-import pytest
-import sys
 import argparse
-import pytest
 import json
-from cli import set_arg_bool, add_arg, parse_config, parse_args
+import sys
+from unittest.mock import patch
+
+import pytest
+
+from cli import add_arg, parse_args, parse_config, set_arg_bool
 
 
 def get_test_config():

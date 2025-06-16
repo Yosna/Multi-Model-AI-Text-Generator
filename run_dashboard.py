@@ -17,8 +17,8 @@ Example:
 """
 
 import subprocess
-import webbrowser
 import time
+import webbrowser
 
 
 def run_dashboard(

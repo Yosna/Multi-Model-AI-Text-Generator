@@ -1,8 +1,10 @@
-from models.registry import ModelRegistry as Model
+from typing import Any
+
 import pytest
 import torch
 import torch.nn as nn
-from typing import Any
+
+from models.registry import ModelRegistry as Model
 
 
 def get_bigram_config():

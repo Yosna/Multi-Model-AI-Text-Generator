@@ -6,11 +6,13 @@ Includes:
 - Model instantiation for language models
 """
 
-from models.registry import ModelRegistry as Model
+from typing import Any, TypeVar
+
 import torch
 from torch import Tensor
 from torch import device as Device
-from typing import Any, TypeVar
+
+from models.registry import ModelRegistry as Model
 
 T = TypeVar("T")
 

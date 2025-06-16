@@ -1,6 +1,8 @@
-from library import _load_from_local, _load_from_huggingface, get_dataset
 from unittest.mock import patch
+
 import pytest
+
+from library import _load_from_huggingface, _load_from_local, get_dataset
 
 
 class MockSplit:

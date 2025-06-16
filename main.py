@@ -4,17 +4,19 @@ Handles argument parsing, dataset loading, model initialization, and dispatches
 training or text generation based on configuration and model type.
 """
 
-from models.registry import ModelRegistry as Model
-import torch
-import random
-import os
 import argparse
-from utils.io_utils import get_config
-from utils.model_utils import build_vocab, create_mappings, get_model
-from utils.data_utils import encode_data
+import os
+import random
+
+import torch
+
 from cli import parse_args, parse_config
 from library import get_dataset
+from models.registry import ModelRegistry as Model
 from tuning import optimize_and_train
+from utils.data_utils import encode_data
+from utils.io_utils import get_config
+from utils.model_utils import build_vocab, create_mappings, get_model
 
 
 def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:

@@ -1,7 +1,8 @@
-from models.registry import ModelRegistry as Model
 import pytest
 import torch
 import torch.nn as nn
+
+from models.registry import ModelRegistry as Model
 
 
 def get_transformer_config():

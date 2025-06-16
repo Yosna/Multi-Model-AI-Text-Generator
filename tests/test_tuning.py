@@ -1,11 +1,13 @@
-from models.registry import ModelRegistry as Model
+import json
+import os
+
+import optuna
 import pytest
 import torch
 import torch.nn as nn
-import optuna
-import json
-import os
-from tuning import optimize_and_train, make_objective, create_pruner
+
+from models.registry import ModelRegistry as Model
+from tuning import create_pruner, make_objective, optimize_and_train
 
 
 def get_test_config():

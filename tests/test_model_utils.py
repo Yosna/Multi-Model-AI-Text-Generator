@@ -1,9 +1,12 @@
-from models.registry import ModelRegistry as Model
-import pytest
-import torch
 import os
 from typing import cast
-from utils.model_utils import build_vocab, create_mappings, get_batch, get_model
+
+import pytest
+import torch
+
+from models.registry import ModelRegistry as Model
+from utils.model_utils import (build_vocab, create_mappings, get_batch,
+                               get_model)
 
 
 def get_test_config():

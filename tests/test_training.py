@@ -1,10 +1,12 @@
-from models.registry import ModelRegistry as Model
+import json
+import os
+
 import pytest
 import torch
 import torch.nn as nn
 from optuna import TrialPruned
-import os
-import json
+
+from models.registry import ModelRegistry as Model
 from training import train, validate_data
 
 

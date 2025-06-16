@@ -1,13 +1,10 @@
 import cProfile
-import sys
 import os
+import sys
 from unittest.mock import patch
-from profiling.profiler import (
-    add_args_to_parser,
-    run_profiler,
-    generate_profile,
-    save_profile,
-)
+
+from profiling.profiler import (add_args_to_parser, generate_profile,
+                                run_profiler, save_profile)
 
 
 def test_add_args_to_parser():

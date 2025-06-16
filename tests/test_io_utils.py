@@ -1,6 +1,8 @@
-from utils.io_utils import get_config, get_metadata, load_config, save_config
 import json
+
 import pytest
+
+from utils.io_utils import get_config, get_metadata, load_config, save_config
 
 
 def build_file(tmp_path, file_name, content):
