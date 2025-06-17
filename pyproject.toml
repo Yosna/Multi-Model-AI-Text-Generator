@@ -1,0 +1,23 @@
+[tool.pytest.ini_options]
+addopts = '--cov=. --cov-report=term-missing'
+filterwarnings = 'ignore:Tight layout not applied:UserWarning'
+
+[tool.coverage.run]
+omit = [
+    'tests/*',
+    'test_*.py',
+    '_test*.py',
+    '*/__init__.py',
+]
+
+[tool.coverage.report]
+exclude_lines = ['if __name__ == .__main__.:']
+
+[tool.flake8]
+docstring-convention = 'google'
+max-line-length = 88
+ignore = ['DAR102', 'E203']
+exclude = ['tests/*']
+
+[tool.isort]
+profile = 'black'

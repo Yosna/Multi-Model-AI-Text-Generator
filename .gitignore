@@ -17,7 +17,7 @@ plots/
 *.db
 
 # Profile reports
-profiling/profiles/
+profiles/
 
 # VSCode/Cursor settings
 .vscode/

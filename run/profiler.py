@@ -17,8 +17,8 @@ def add_args_to_parser() -> argparse.Namespace:
         argparse.Namespace: Parsed command-line arguments.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="transformer")
-    parser.add_argument("--token-level", type=str, default="word")
+    parser.add_argument("--model", type=str, default="bigram")
+    parser.add_argument("--token-level", type=str, default="char")
     parser.add_argument("--training", type=bool, default=True)
     parser.add_argument("--steps", type=int, default=1000)
     parser.add_argument("--save-model", type=bool, default=False)
@@ -76,7 +76,7 @@ def generate_profile(profiler: cProfile.Profile) -> str:
     return profile
 
 
-def save_profile(profile: str, directory: str = "profiling/profiles") -> None:
+def save_profile(profile: str, directory: str = "profiles") -> None:
     """Save the profile report to a timestamped file in the specified directory.
 
     Args:

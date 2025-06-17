@@ -53,7 +53,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Integrated dataset library with pre-configured datasets
 - Support for local files, Hugging Face datasets, and built-in library datasets
 - Built-in profiling for performance analysis
-- **Statistics**: 136 unit tests, 100% coverage, 772 stmts / 0 miss
+- **Statistics**: 141 unit tests, 100% coverage, 788 stmts / 0 miss
 
 ## Model Architectures
 
@@ -340,7 +340,7 @@ Visualize your hyperparameter optimization studies interactively with Optuna Das
 
 - Launch with:
   ```bash
-  python run_dashboard.py
+  python -m run dashboard
   ```
 - The dashboard will open at **localhost:8080**.
 - Requires `optuna-dashboard` (install with `pip install optuna-dashboard`).
@@ -350,12 +350,12 @@ Visualize your hyperparameter optimization studies interactively with Optuna Das
 
 A built-in profiling tool is included to help you analyze performance bottlenecks in your code.
 
-- The profiler is located at `profiling/profiler.py`.
-- It runs the main application under `cProfile` and saves filtered, timestamped reports to `profiling/profiles/`.
+- The profiler is located at `run/profiler.py` and is accessible via the modular run package.
+- It runs the main application under `cProfile` and saves filtered, timestamped reports to `profiles/`.
 - Reports are filtered to exclude virtual environment and bootstrap code, and show the top functions by calls, time, and cumulative time.
 - You can run the profiler with:
   ```bash
-  python -m profiling.profiler
+  python -m run profiler
   ```
 - You can also import and use the profiler programmatically in your own scripts or tests.
 - The profiling tool is unit tested with 100% coverage.
@@ -527,7 +527,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, model/CLI behavior, and profiling.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 136 unit tests, 100% coverage, 772 stmts / 0 miss
+- **Statistics**: 141 unit tests, 100% coverage, 788 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest

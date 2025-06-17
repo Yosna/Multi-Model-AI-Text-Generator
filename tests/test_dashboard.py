@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from run_dashboard import run_dashboard
+from run.dashboard import run_dashboard
 
 
 def test_run_dashboard():

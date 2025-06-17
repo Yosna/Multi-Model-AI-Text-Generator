@@ -5,8 +5,7 @@ import pytest
 import torch
 
 from models.registry import ModelRegistry as Model
-from utils.model_utils import (build_vocab, create_mappings, get_batch,
-                               get_model)
+from utils.model_utils import build_vocab, create_mappings, get_batch, get_model
 
 
 def get_test_config():

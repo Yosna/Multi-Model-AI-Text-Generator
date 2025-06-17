@@ -1,5 +1,0 @@
-[flake8]
-docstring-convention = google
-max-line-length = 88
-ignore = DAR102,E203
-exclude = tests/*

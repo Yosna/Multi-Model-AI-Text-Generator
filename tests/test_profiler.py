@@ -3,8 +3,12 @@ import os
 import sys
 from unittest.mock import patch
 
-from profiling.profiler import (add_args_to_parser, generate_profile,
-                                run_profiler, save_profile)
+from run.profiler import (
+    add_args_to_parser,
+    generate_profile,
+    run_profiler,
+    save_profile,
+)
 
 
 def test_add_args_to_parser():
@@ -22,9 +26,9 @@ def test_add_args_to_parser():
 
 def test_run_profiler():
     with patch.object(sys, "argv", ["profiler.py"]), patch(
-        "profiling.profiler.main"
-    ) as main, patch("profiling.profiler.generate_profile") as generate_profile, patch(
-        "profiling.profiler.save_profile"
+        "run.profiler.main"
+    ) as main, patch("run.profiler.generate_profile") as generate_profile, patch(
+        "run.profiler.save_profile"
     ) as save_profile:
         run_profiler()
         main.assert_called_once()
