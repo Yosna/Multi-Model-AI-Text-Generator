@@ -20,6 +20,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - [Model Architectures](#model-architectures)
 - [Datasets](#datasets)
 - [Configuration](#configuration)
+- [Configuration Editor](#configuration-editor)
 - [Hyperparameter Tuning](#hyperparameter-tuning)
 - [Optuna Dashboard](#optuna-dashboard)
 - [Profiling](#profiling)
@@ -53,7 +54,8 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Integrated dataset library with pre-configured datasets
 - Support for local files, Hugging Face datasets, and built-in library datasets
 - Built-in profiling for performance analysis
-- **Statistics**: 141 unit tests, 100% coverage, 788 stmts / 0 miss
+- Interactive GUI for editing `config.json`
+- **Statistics**: 185 unit tests, 100% coverage, 993 stmts / 0 miss
 
 ## Model Architectures
 
@@ -106,7 +108,7 @@ You can use any dataset from the Hugging Face Hub by specifying the dataset name
 
 ## Configuration
 
-All behavior is driven by a single `config.json` file.
+All behavior is driven by a single `config.json` file. You can edit this file manually or use the user-friendly [Configuration Editor](#configuration-editor).
 
 <details>
 <summary><b>Example</b> <code>config.json</code> (<i>click to expand</i>)</summary>
@@ -323,6 +325,18 @@ You can configure:
 - **Tuning Ranges** (`tuning_ranges`): Hyperparameter search spaces for automatic tuning
 - **Visualization** (`visualization`): Loss plotting, smoothing, and saving options
 
+## Configuration Editor
+
+An interactive GUI for editing `config.json` is included to simplify configuration management.
+
+- Launch with:
+  ```bash
+  python -m run config
+  ```
+- This will open a window where you can view and modify all settings from `config.json`.
+- The config editor supports saving changes back to the file.
+- [DearPyGui](https://dearpygui.readthedocs.io/en/latest/) was used to build the editor.
+
 ## Hyperparameter Tuning
 
 Automatic hyperparameter tuning is supported via [Optuna](https://optuna.org/).
@@ -479,6 +493,7 @@ While not yet semantically coherent, the model demonstrates accurate word shapes
 - pytest (for unit testing)
 - coverage (for test coverage reporting)
 - optuna (for hyperparameter tuning)
+- dearpygui (for configuration editor)
 
 Install all dependencies with:
 
@@ -527,7 +542,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, model/CLI behavior, and profiling.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 141 unit tests, 100% coverage, 788 stmts / 0 miss
+- **Statistics**: 185 unit tests, 100% coverage, 993 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest

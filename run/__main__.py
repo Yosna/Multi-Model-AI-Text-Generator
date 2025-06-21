@@ -3,10 +3,12 @@
 This module allows you to run available tools using `python -m run <tool>`.
 
 Tools:
+    - config: Configuration editor
     - dashboard: Optuna dashboard
     - profiler: cProfile profiler
 
 Examples:
+    python -m run config
     python -m run dashboard
     python -m run profiler
 """
@@ -14,7 +16,7 @@ Examples:
 import argparse
 import sys
 
-from . import dashboard, profiler
+from . import config, dashboard, profiler
 
 
 def get_tool() -> str:
@@ -23,7 +25,7 @@ def get_tool() -> str:
     Returns:
         str: The name of the tool to run.
     """
-    tools = ["dashboard", "profiler"]
+    tools = ["config", "dashboard", "profiler"]
     parser = argparse.ArgumentParser()
     parser.add_argument("tool", type=str, choices=tools)
     args = parser.parse_args()
@@ -40,7 +42,9 @@ def run_tool(tool: str) -> None:
         ValueError: If an invalid tool name is provided.
     """
     sys.argv = [sys.argv[0][:-3]]
-    if tool == "dashboard":
+    if tool == "config":
+        config.run_config()
+    elif tool == "dashboard":
         dashboard.run_dashboard()
     elif tool == "profiler":
         profiler.run_profiler()

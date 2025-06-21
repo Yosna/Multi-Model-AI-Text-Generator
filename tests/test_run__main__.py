@@ -6,13 +6,13 @@ import pytest
 from run.__main__ import get_tool, run_tool
 
 
-@pytest.mark.parametrize("tool", ["dashboard", "profiler"])
+@pytest.mark.parametrize("tool", ["config", "dashboard", "profiler"])
 def test_get_tool(tool):
     with patch.object(sys, "argv", ["run.py", tool]):
         assert get_tool() == tool
 
 
-@pytest.mark.parametrize("tool", ["dashboard", "profiler"])
+@pytest.mark.parametrize("tool", ["config", "dashboard", "profiler"])
 def test_run_tool(tool):
     sys.argv = ["run...", tool]
     with patch(f"run.__main__.{tool}.run_{tool}") as module:
