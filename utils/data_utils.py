@@ -31,7 +31,7 @@ def decode_data(data: torch.Tensor, itos: dict[int, str], token_level: str) -> s
         data (torch.Tensor): Tensor of indices.
         itos (dict[int, str]): Index-to-character mapping.
         token_level (str): Token level to use for vocabulary building.
-            Options: "char" (default), or "word"
+            Options: "char" or "word"
 
     Returns:
         str: Decoded string.

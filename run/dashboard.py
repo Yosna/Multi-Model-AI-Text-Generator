@@ -13,7 +13,7 @@ in the default web browser.
 
 Example:
     To launch the dashboard:
-    python run_dashboard.py
+    python -m run dashboard
 """
 
 import subprocess
@@ -56,7 +56,7 @@ def run_dashboard(
             Please install it with:
             pip install optuna-dashboard
             Then run the dashboard with:
-            python run_dashboard.py
+            python -m run dashboard
             """
         )
 

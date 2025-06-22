@@ -4,22 +4,12 @@ This module provides automated hyperparameter optimization using Optuna.
 It supports multiple pruning strategies (Median, Successive Halving, and Hyperband)
 and persists optimization studies to SQLite for later analysis.
 
-Key Features:
+Includes:
 - Automated hyperparameter search with configurable number of trials
 - Multiple pruning strategies to optimize search efficiency
 - Study persistence for long-running optimizations
 - Integration with Optuna Dashboard for visualization
 - Configurable tuning ranges and optimization parameters
-
-Example:
-    To enable hyperparameter tuning, set in config.json:
-    {
-        "tuning_options": {
-            "auto_tuning": true,
-            "save_study": true,
-            "pruner": "hyperband"
-        }
-    }
 """
 
 import optuna

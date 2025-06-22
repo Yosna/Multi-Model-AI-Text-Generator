@@ -63,9 +63,9 @@ def test_build_button_window(dpg):
     _build_button_window("test", [], widgets, 100, 100)
     dpg.child_window.assert_called_once()
     dpg.table.assert_called_once()
-    assert dpg.add_table_column.call_count == 4
     dpg.table_row.assert_called_once()
-    assert dpg.table_cell.call_count == 4
+    assert dpg.add_table_column.call_count == 4
+    assert dpg.add_button.call_count == 4
 
 
 def test_add_config_button():

@@ -1,4 +1,15 @@
-"""Profiler for running and saving performance profiles of the main application."""
+"""Profiler for running and saving performance profiles of the main application.
+
+Includes:
+- Command-line argument parsing for profiling
+- Profiling of the main application
+- Generation of profile reports
+- Saving of profile reports
+
+Example:
+    To run the profiler:
+    python -m run profiler
+"""
 
 import argparse
 import cProfile

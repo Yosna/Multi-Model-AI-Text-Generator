@@ -1,4 +1,13 @@
-"""A module for creating and managing configuration widgets."""
+"""A module for creating and managing configuration widgets.
+
+Includes:
+- add_config_item: Add a configuration item to the window.
+- build_int_list: Build a list of integers for an integer input widget.
+- _set_bool_input: Set a boolean input widget.
+- _set_int_input: Set an integer input widget.
+- _set_float_input: Set a float input widget.
+- _set_list_input: Set a list input widget.
+"""
 
 from typing import Any
 
@@ -86,40 +95,57 @@ def _set_int_input(
     Returns:
         str: The tag of the widget.
     """
-    if key == "max_new_tokens":
-        items = [str(2**i) for i in range(11)]
-        dpg.add_combo(items=items, default_value=str(value), width=width, tag=tag)
-    elif key == "max_checkpoints":
-        items = [str(i) for i in range(1, 11)]
-        items += [str(i * 10) for i in range(2, 11)]
-        items += [str(i * 100) for i in range(2, 11)]
-        dpg.add_combo(items=items, default_value=str(value), width=width, tag=tag)
-    elif key == "steps" and parents[-1] == "runtime":
-        items = [str(i * 1000) for i in range(1, 11)]
-        items += [str(i * 10000) for i in range(2, 11)]
-        dpg.add_combo(items=items, default_value=str(value), width=width, tag=tag)
-    elif key == "interval" and parents[-1] == "runtime":
-        items = [str(i * 100) for i in range(1, 11)]
-        items += [str(i * 1000) for i in range(2, 11)]
-        dpg.add_combo(items=items, default_value=str(value), width=width, tag=tag)
-    elif key == "batch_size":
-        items = [str(2**i) for i in range(1, 9)]
-        dpg.add_combo(items=items, default_value=str(value), width=width, tag=tag)
-    elif key == "block_size":
-        items = [str(2**i) for i in range(2, 10)]
-        dpg.add_combo(items=items, default_value=str(value), width=width, tag=tag)
-    elif key == "n_trials":
-        items = [str(i) for i in range(1, 11)]
-        items += [str(i * 10) for i in range(2, 11)]
-        items += [str(i * 100) for i in range(2, 11)]
-        dpg.add_combo(items=items, default_value=str(value), width=width, tag=tag)
-    elif key == "step_divisor":
-        items = [str(i) for i in range(1, 11)]
-        items += [str(i * 10) for i in range(2, 11)]
+
+    def when(key: str, parent: int | None = None) -> bool:
+        return False if not parents else parents[parent or -1] == key
+
+    options = {
+        "max_new_tokens": {"data": ["pow", [11]], "when": True},
+        "max_checkpoints": {"data": ["mult", [1, 10, 100]], "when": True},
+        "steps": {"data": ["mult", [1000, 10000]], "when": when("runtime")},
+        "interval": {"data": ["mult", [100, 1000]], "when": when("runtime")},
+        "patience": {"data": ["mult", [1, 10]], "when": when("runtime")},
+        "batch_size": {"data": ["pow", [1, 9]], "when": True},
+        "block_size": {"data": ["pow", [2, 10]], "when": True},
+        "n_trials": {"data": ["mult", [1, 10, 100]], "when": True},
+        "step_divisor": {"data": ["mult", [1, 10]], "when": True},
+    }
+
+    if key in options and options[key]["when"]:
+        kind, values = options[key]["data"]
+        kind = "powers_of_two" if kind == "pow" else "multiples_of_ten"
+        items = build_int_list(kind, values)
         dpg.add_combo(items=items, default_value=str(value), width=width, tag=tag)
     else:
         dpg.add_input_int(default_value=value, width=width, tag=tag)
     return tag
+
+
+def build_int_list(kind: str, values: list[int]) -> list[str]:
+    """Build a list of integers for an integer input widget.
+
+    Args:
+        kind (str): The kind of the widget. "powers_of_two" or "multiples_of_ten".
+        values (list[int]): The range or multiples for the items.
+
+    Returns:
+        list[str]: The items for the widget.
+
+    Raises:
+        ValueError: If the kind is not valid.
+    """
+    if kind == "powers_of_two":
+        items = [str(2**i) for i in range(*values)]
+    elif kind == "multiples_of_ten":
+        items = []
+        for multiple in values:
+            items += [str(i * multiple) for i in range(1, 11)]
+    else:
+        raise ValueError(
+            f"""Invalid kind: {kind}
+            Valid kinds: powers_of_two, multiples_of_ten"""
+        )
+    return list(dict.fromkeys(items))
 
 
 def _set_float_input(
@@ -137,20 +163,14 @@ def _set_float_input(
     Returns:
         str: The tag of the widget.
     """
-    if key == "temperature":
+    add_slider_widget = key == "temperature" or (
+        key == "weight" and parents[-1] == "visualization"
+    )
+    if add_slider_widget:
         dpg.add_slider_float(
             default_value=value,
             min_value=0,
-            max_value=2,
-            width=width,
-            format="%.2f",
-            tag=tag,
-        )
-    elif key == "weight" and parents[-1] == "visualization":
-        dpg.add_slider_float(
-            default_value=value,
-            min_value=0,
-            max_value=1,
+            max_value=2 if key == "temperature" else 1,
             width=width,
             format="%.2f",
             tag=tag,
@@ -179,21 +199,15 @@ def _set_list_input(value: list, tag: str, width: int) -> str:
                 dpg.add_table_column()
 
             with dpg.table_row():
-                with dpg.group(horizontal=True):
-                    dpg.add_text(" min:")
-                with dpg.group(horizontal=True):
-                    dpg.add_text(" max:")
-                with dpg.group(horizontal=True):
-                    dpg.add_text(" step:")
+                [dpg.add_text(text) for text in [" min:", " max:", " step:"]]
 
             with dpg.table_row():
                 width = int(width * 0.3125)
                 keys = {"min": value[0], "max": value[-1], "step": value[1] - value[0]}
                 for key in keys:
-                    with dpg.group(horizontal=True):
-                        dpg.add_input_int(
-                            default_value=keys[key], width=width, tag=f"{tag}.{key}"
-                        )
+                    dpg.add_input_int(
+                        default_value=keys[key], width=width, tag=f"{tag}.{key}"
+                    )
         return tag
 
 
@@ -212,22 +226,24 @@ def _set_str_input(
     Returns:
         str: The tag of the widget.
     """
-    if key == "type" and parents[-2] == "tuning_ranges":
+
+    def when(key: str, parent: int | None = None) -> bool:
+        return False if not parents else parents[parent or -1] == key
+
+    sources = ["local", "library", "huggingface"]
+    libraries = ["news", "squad", "science", "movies", "yelp"]
+    libraries.extend(["tiny_stories", "stackoverflow", "wikipedia"])
+    options = {
+        "source": {"data": sources, "when": when("datasets")},
+        "data_name": {"data": libraries, "when": when("library")},
+        "token_level": {"data": ["char", "word"], "when": True},
+        "pruner": {"data": ["median", "halving", "hyperband"], "when": True},
+    }
+
+    if key == "type" and when("tuning_ranges", -2):
         dpg.add_text(value, tag=tag)
-    elif key == "source":
-        items = ["local", "library", "huggingface"]
-        dpg.add_combo(items=items, default_value=value, width=width, tag=tag)
-    elif key == "data_name" and parents[-1] == "library":
-        items = [
-            *["news", "squad", "science", "movies", "yelp"],
-            *["tiny_stories", "stackoverflow", "wikipedia"],
-        ]
-        dpg.add_combo(items=items, default_value=value, width=width, tag=tag)
-    elif key == "token_level":
-        items = ["char", "word"]
-        dpg.add_combo(items=items, default_value=value, width=width, tag=tag)
-    elif key == "pruner":
-        items = ["median", "halving", "hyperband"]
+    elif key in options and options[key]["when"]:
+        items = options[key]["data"]
         dpg.add_combo(items=items, default_value=value, width=width, tag=tag)
     else:
         dpg.add_input_text(default_value=value, width=width, tag=tag)

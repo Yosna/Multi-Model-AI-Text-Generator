@@ -1,4 +1,14 @@
-"""A module for creating and managing the configuration window."""
+"""A module for creating and managing the configuration window.
+
+Includes:
+- Command-line argument parsing for configuration
+- Building and managing the configuration window
+- Saving and loading configuration files
+
+Example:
+    To run the configuration window:
+    python -m run config
+"""
 
 from typing import Any, Callable
 
@@ -76,6 +86,7 @@ def _build_config_window(
                 parents = [] if indent == 0 else parents
                 spacer = "  " * indent
                 label = f"{spacer}{key}:"
+
                 if isinstance(value, dict):
                     with dpg.collapsing_header(
                         label=label, default_open=False, indent=indent
@@ -114,22 +125,19 @@ def _build_button_window(
             with dpg.table_row():
                 width = int(width * 0.2325)
                 user_data = {
-                    "widgets": widgets,
-                    "headers": headers,
-                    "path": label,
-                    "config": {},
+                    **{"widgets": widgets, "headers": headers},
+                    **{"path": label, "config": {}},
                 }
 
-                with dpg.table_cell():
-                    add_config_button("Expand All", width, _expand_config, user_data)
-                with dpg.table_cell():
-                    add_config_button(
-                        "Collapse All", width, _collapse_config, user_data
-                    )
-                with dpg.table_cell():
-                    add_config_button("Save Config", width, _save_config, user_data)
-                with dpg.table_cell():
-                    add_config_button("Close", width, dpg.stop_dearpygui)
+                callbacks = {
+                    "Expand All": _expand_config,
+                    "Collapse All": _collapse_config,
+                    "Save Config": _save_config,
+                    "Close": dpg.stop_dearpygui,
+                }
+
+                for button in callbacks:
+                    add_config_button(button, width, callbacks[button], user_data)
 
 
 def add_config_button(

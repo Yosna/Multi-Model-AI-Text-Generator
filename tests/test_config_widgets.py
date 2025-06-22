@@ -9,6 +9,7 @@ from run.helpers.widgets import (
     _set_list_input,
     _set_str_input,
     add_config_item,
+    build_int_list,
 )
 
 
@@ -56,7 +57,8 @@ def test_set_bool_input_update(dpg):
         ("max_new_tokens", 256, []),
         ("max_checkpoints", 10, []),
         ("steps", 1000, ["runtime"]),
-        ("interval", 500, ["other", "runtime"]),
+        ("interval", 500, ["", "runtime"]),
+        ("patience", 10, ["", "runtime"]),
         ("batch_size", 16, []),
         ("block_size", 128, []),
         ("n_trials", 50, []),
@@ -69,6 +71,24 @@ def test_set_bool_input_update(dpg):
 def test_set_int_input(dpg, key, value, parents):
     tag = _set_int_input(key, value, "test", parents, 0)
     assert tag == "test"
+
+
+@pytest.mark.parametrize(
+    "type, values, expected",
+    [
+        ("powers_of_two", [8], [str(2**i) for i in range(8)]),
+        ("multiples_of_ten", [10], [str(i * 10) for i in range(1, 11)]),
+    ],
+)
+@patch("run.helpers.widgets.dpg")
+def test_build_int_list(dpg, type, values, expected):
+    items = build_int_list(type, values)
+    assert items == expected
+
+
+def test_build_int_list_error():
+    with pytest.raises(ValueError):
+        build_int_list("invalid", [])
 
 
 @pytest.mark.parametrize(
