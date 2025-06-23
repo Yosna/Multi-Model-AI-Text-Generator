@@ -1,3 +1,4 @@
+import json
 import os
 from typing import cast
 
@@ -54,13 +55,20 @@ def get_models_config():
     }
 
 
+def build_file(tmp_path, file_name, content):
+    file = tmp_path / file_name
+    file.write_text(content)
+    return file
+
+
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
         config = get_test_config()["models"]["bigram"]
+        cfg_path = build_file(base_dir, "config.json", json.dumps(get_test_config()))
         super().__init__(
             model_name="bigram",
             config=config,
-            cfg_path=os.path.join(base_dir, "config.json"),
+            cfg_path=cfg_path,
             vocab_size=10,
         )
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
@@ -101,7 +109,7 @@ def test_create_mappings():
 
 def test_get_batch(tmp_path):
     torch.manual_seed(42)
-    model = MockModel(str(tmp_path))
+    model = MockModel(tmp_path)
     data = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     block_size = cast(int, model.block_size)
     batch_size = cast(int, model.batch_size)

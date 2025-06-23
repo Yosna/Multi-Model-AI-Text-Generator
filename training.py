@@ -118,10 +118,8 @@ def validate_data(
         val_losses.append(val_loss)
         loss_improved = val_loss < best_loss
         full_training_run = step_divisor == 1
-        model_options = get_config(model.cfg_path, "model_options")
-        save_model = model_options.get("save_model", False)
 
-        if loss_improved and full_training_run and save_model:
+        if loss_improved and full_training_run and model.save_model:
             # Save model if validation loss improves during a full training run
             model.save_checkpoint(step, val_loss)
 

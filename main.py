@@ -90,11 +90,9 @@ def run_model(
     if model.training:
         optimize_and_train(model, data)
     else:
-        model_options = get_config(model.cfg_path, "model_options")
-        temperature = model_options.get("temperature", 1.0)
         seed_char = random.choice(list(stoi.keys()))
         start_idx = stoi[seed_char]
-        generated_text = model.generate(start_idx, itos, temperature)
+        generated_text = model.generate(start_idx, itos)
         print(generated_text)
 
 

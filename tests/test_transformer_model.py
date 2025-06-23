@@ -1,3 +1,7 @@
+import json
+import os
+from typing import Any
+
 import pytest
 import torch
 import torch.nn as nn
@@ -7,6 +11,7 @@ from models.registry import ModelRegistry as Model
 
 def get_transformer_config():
     return {
+        "model_options": {},
         "runtime": {
             "training": True,
             "steps": 1,
@@ -28,32 +33,48 @@ def get_transformer_config():
     }
 
 
-def get_transformer_model():
-    return Model.TransformerLM(
-        config=get_transformer_config(),
-        cfg_path="test_config.json",
-        vocab_size=5,
-        token_level="char",
-    )
+def build_file(tmp_path, file_name, content):
+    file = tmp_path / file_name
+    file.write_text(content)
+    return file
 
 
-def test_transformer_model():
-    model = get_transformer_model()
+def get_transformer_model(
+    tmp_path,
+    config: dict[str, Any] | None = None,
+    cfg_path: str | None = None,
+    vocab_size: int = 5,
+    token_level: str = "char",
+):
+    if config is None:
+        config = get_transformer_config()
+    if cfg_path is None:
+        cfg_path = str(build_file(tmp_path, "config.json", json.dumps(config)))
+
+    return Model.TransformerLM(config, cfg_path, vocab_size, token_level)
+
+
+def test_transformer_model(tmp_path):
+    model = get_transformer_model(tmp_path)
     assert model is not None
 
 
-def test_transformer_model_no_vocab_size():
+def test_transformer_model_no_vocab_size(tmp_path):
     with pytest.raises(ValueError):
         Model.TransformerLM(
             config=get_transformer_config(),
-            cfg_path="test_config.json",
+            cfg_path=str(
+                build_file(
+                    tmp_path, "config.json", json.dumps(get_transformer_config())
+                )
+            ),
             vocab_size=0,
             token_level="char",
         )
 
 
-def test_transformer_model_init():
-    model = get_transformer_model()
+def test_transformer_model_init(tmp_path):
+    model = get_transformer_model(tmp_path)
     assert model.name == "transformer"
     assert model.vocab_size == 5
     assert model.embedding_dim == 4
@@ -63,22 +84,22 @@ def test_transformer_model_init():
     assert model.num_layers == 1
 
 
-def test_transformer_model_token_embedding_layer():
-    model = get_transformer_model()
+def test_transformer_model_token_embedding_layer(tmp_path):
+    model = get_transformer_model(tmp_path)
     assert isinstance(model.token_embedding, nn.Embedding)
     assert model.token_embedding.num_embeddings == 5
     assert model.token_embedding.embedding_dim == 4
 
 
-def test_transformer_model_position_embedding_layer():
-    model = get_transformer_model()
+def test_transformer_model_position_embedding_layer(tmp_path):
+    model = get_transformer_model(tmp_path)
     assert isinstance(model.position_embedding, nn.Embedding)
     assert model.position_embedding.num_embeddings == 16
     assert model.position_embedding.embedding_dim == 4
 
 
-def test_transformer_model_encoder():
-    model = get_transformer_model()
+def test_transformer_model_encoder(tmp_path):
+    model = get_transformer_model(tmp_path)
     encoder_layer = model.transformer.layers[0]
     out = encoder_layer(torch.randn(2, 4, 4))
     assert isinstance(model.transformer, nn.TransformerEncoder)
@@ -90,16 +111,16 @@ def test_transformer_model_encoder():
     assert out.shape == (2, 4, 4)
 
 
-def test_transformer_model_fc_layer():
-    model = get_transformer_model()
+def test_transformer_model_fc_layer(tmp_path):
+    model = get_transformer_model(tmp_path)
     assert isinstance(model.fc, nn.Linear)
     assert model.fc.in_features == 4
     assert model.fc.out_features == 5
     assert model.fc.bias is not None
 
 
-def test_transformer_model_repr():
-    model = get_transformer_model()
+def test_transformer_model_repr(tmp_path):
+    model = get_transformer_model(tmp_path)
     assert str(model) == (
         f"TransformerLanguageModel(\n"
         f"\tvocab_size={model.vocab_size},\n"
@@ -112,15 +133,15 @@ def test_transformer_model_repr():
     ).expandtabs(4)
 
 
-def test_transformer_model_forward():
-    model = get_transformer_model()
+def test_transformer_model_forward(tmp_path):
+    model = get_transformer_model(tmp_path)
     idx = torch.tensor([[0, 1, 2, 3, 4]])
     logits = model(idx)
     assert logits.shape == torch.Size([1, 5, 5])
 
 
-def test_transformer_model_generate():
-    model = get_transformer_model()
+def test_transformer_model_generate(tmp_path):
+    model = get_transformer_model(tmp_path)
     model.device = torch.device("cpu")
     start_idx = 1
     itos = {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}

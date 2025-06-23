@@ -1,3 +1,7 @@
+import json
+import os
+from typing import Any
+
 import pytest
 import torch
 import torch.nn as nn
@@ -7,6 +11,7 @@ from models.registry import ModelRegistry as Model
 
 def get_gru_config():
     return {
+        "model_options": {},
         "runtime": {
             "training": True,
             "steps": 1,
@@ -26,32 +31,46 @@ def get_gru_config():
     }
 
 
-def get_gru_model():
-    return Model.GRULM(
-        config=get_gru_config(),
-        cfg_path="test_config.json",
-        vocab_size=5,
-        token_level="char",
-    )
+def build_file(tmp_path, file_name, content):
+    file = tmp_path / file_name
+    file.write_text(content)
+    return file
 
 
-def test_gru_model():
-    model = get_gru_model()
+def get_gru_model(
+    tmp_path,
+    config: dict[str, Any] | None = None,
+    cfg_path: str | None = None,
+    vocab_size: int = 5,
+    token_level: str = "char",
+):
+    if config is None:
+        config = get_gru_config()
+    if cfg_path is None:
+        cfg_path = str(build_file(tmp_path, "config.json", json.dumps(config)))
+
+    return Model.GRULM(config, cfg_path, vocab_size, token_level)
+
+
+def test_gru_model(tmp_path):
+    model = get_gru_model(tmp_path)
     assert model is not None
 
 
-def test_gru_model_no_vocab_size():
+def test_gru_model_no_vocab_size(tmp_path):
     with pytest.raises(ValueError):
         Model.GRULM(
             config=get_gru_config(),
-            cfg_path="test_config.json",
+            cfg_path=str(
+                build_file(tmp_path, "config.json", json.dumps(get_gru_config()))
+            ),
             vocab_size=0,
             token_level="char",
         )
 
 
-def test_gru_model_init():
-    model = get_gru_model()
+def test_gru_model_init(tmp_path):
+    model = get_gru_model(tmp_path)
     assert model.name == "gru"
     assert model.vocab_size == 5
     assert model.embedding_dim == 4
@@ -59,15 +78,15 @@ def test_gru_model_init():
     assert model.num_layers == 1
 
 
-def test_gru_model_embedding_layer():
-    model = get_gru_model()
+def test_gru_model_embedding_layer(tmp_path):
+    model = get_gru_model(tmp_path)
     assert isinstance(model.embedding, nn.Embedding)
     assert model.embedding.num_embeddings == 5
     assert model.embedding.embedding_dim == 4
 
 
-def test_gru_model_gru_layer():
-    model = get_gru_model()
+def test_gru_model_gru_layer(tmp_path):
+    model = get_gru_model(tmp_path)
     assert isinstance(model.gru, nn.GRU)
     assert model.gru.input_size == 4
     assert model.gru.hidden_size == 8
@@ -75,16 +94,16 @@ def test_gru_model_gru_layer():
     assert model.gru.batch_first
 
 
-def test_gru_model_fc_layer():
-    model = get_gru_model()
+def test_gru_model_fc_layer(tmp_path):
+    model = get_gru_model(tmp_path)
     assert isinstance(model.fc, nn.Linear)
     assert model.fc.in_features == 8
     assert model.fc.out_features == 5
     assert model.fc.bias is not None
 
 
-def test_gru_model_repr():
-    model = get_gru_model()
+def test_gru_model_repr(tmp_path):
+    model = get_gru_model(tmp_path)
     assert str(model) == (
         f"GRULanguageModel(\n"
         f"\tvocab_size={model.vocab_size},\n"
@@ -95,8 +114,8 @@ def test_gru_model_repr():
     ).expandtabs(4)
 
 
-def test_gru_model_forward():
-    model = get_gru_model()
+def test_gru_model_forward(tmp_path):
+    model = get_gru_model(tmp_path)
     idx = torch.tensor([[0, 1, 2, 3, 4]])
     logits = model(idx)
     assert logits.shape == torch.Size([1, 5, 5])
@@ -105,8 +124,8 @@ def test_gru_model_forward():
     assert model.hidden.shape == torch.Size([1, 1, 8])
 
 
-def test_gru_model_generate():
-    model = get_gru_model()
+def test_gru_model_generate(tmp_path):
+    model = get_gru_model(tmp_path)
     model.device = torch.device("cpu")
     start_idx = 1
     itos = {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}

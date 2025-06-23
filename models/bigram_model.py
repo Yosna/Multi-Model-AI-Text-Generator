@@ -103,9 +103,7 @@ class BigramLanguageModel(BaseLanguageModel):
         return logits
 
     @torch.no_grad()
-    def generate(
-        self, start_idx: int, itos: dict[int, str], temperature: float = 1.0
-    ) -> str:
+    def generate(self, start_idx: int, itos: dict[int, str]) -> str:
         """Generate new text by sampling from the model's predictions.
 
         Multinomial sampling is used to add randomness to the output.
@@ -124,9 +122,9 @@ class BigramLanguageModel(BaseLanguageModel):
         generated = torch.tensor([start_idx], dtype=torch.long, device=self.device)
 
         for _ in range(self.max_new_tokens):
-            # Get predictions for next step
             logits = self(idx)
-            next_idx = self.new_token(logits, temperature)
+            next_idx = self.new_token(logits)
+            idx = next_idx
             generated = torch.cat((generated, next_idx.flatten()), dim=0)
 
         return decode_data(generated, itos, self.token_level)

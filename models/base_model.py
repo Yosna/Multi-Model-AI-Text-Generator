@@ -79,6 +79,11 @@ class BaseLanguageModel(nn.Module):
         self.ckpt_path: str = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path: str = os.path.join(self.ckpt_dir, "metadata.json")
 
+        # Set model options as attributes
+        model_options = get_config(self.cfg_path, "model_options")
+        self.save_model = model_options.get("save_model", False)
+        self.temperature = model_options.get("temperature", 1.0)
+
         # Set all runtime config keys as attributes
         for key, value in config.get("runtime", {}).items():
             setattr(self, key, value)
@@ -168,7 +173,7 @@ class BaseLanguageModel(nn.Module):
                 print(f"Best Loss this training session: {best_loss}")
         return overfit, best_loss, wait
 
-    def new_token(self, logits: torch.Tensor, temperature: float = 1.0) -> torch.Tensor:
+    def new_token(self, logits: torch.Tensor) -> torch.Tensor:
         """Generate the next token in the sequence using the model's predictions.
 
         Args:
@@ -176,7 +181,6 @@ class BaseLanguageModel(nn.Module):
                 - B: batch size
                 - T: sequence length
                 - C: vocabulary size
-            temperature (float): Temperature for sampling (default: 1.0)
 
         Returns:
             torch.Tensor: Next token index of shape (B, 1)
@@ -184,7 +188,7 @@ class BaseLanguageModel(nn.Module):
         # Focus on the last time step
         logits = logits[:, -1, :]
         # Convert logits to probabilities
-        probs = F.softmax(logits / temperature, dim=-1)
+        probs = F.softmax(logits / self.temperature, dim=-1)
         # Sample from the probability distribution
         next_idx = torch.multinomial(probs, num_samples=1)
         return next_idx
