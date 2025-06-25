@@ -18,16 +18,6 @@ class BaseLanguageModel(Model.BaseLM):
         logits = self.embedding(idx)
         return logits
 
-    def generate(self, start_idx, max_new_tokens):
-        self.eval()
-        idx = torch.tensor([[start_idx]], dtype=torch.long, device=self.device)
-        generated = torch.tensor([start_idx], dtype=torch.long, device=self.device)
-        for _ in range(max_new_tokens):
-            logits = self(idx)
-            next_idx = self.new_token(logits)
-            generated = torch.cat((generated, next_idx), dim=0)
-        return generated
-
 
 def get_base_model(tmp_path):
     cfg_path = build_file(tmp_path, "config.json", json.dumps(get_test_config()))
@@ -121,16 +111,6 @@ def test_base_model_check_patience_no_loss_improvement(tmp_path):
     assert overfit
     assert best_loss == 1
     assert wait == 10
-
-
-def test_base_model_new_token(tmp_path):
-    model = get_base_model(tmp_path)
-    logits = torch.tensor([0.1, 0.2, 0.3, 0.4, 0.5]).repeat(1, 10, 1)
-    next_idx = model.new_token(logits)
-    assert isinstance(next_idx, torch.Tensor)
-    assert next_idx.shape == torch.Size([1, 1])
-    assert model.vocab_size is not None
-    assert next_idx.item() in range(model.vocab_size)
 
 
 def test_save_checkpoint(tmp_path):

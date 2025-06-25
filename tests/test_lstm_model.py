@@ -128,9 +128,9 @@ def test_lstm_model_forward(tmp_path):
 def test_lstm_model_generate(tmp_path):
     model = get_lstm_model(tmp_path)
     model.device = torch.device("cpu")
-    start_idx = 1
+    stoi = {"!": 0, "H": 1, "e": 2, "l": 3, "o": 4}
     itos = {0: "!", 1: "H", 2: "e", 3: "l", 4: "o"}
-    generated = model.generate(start_idx, itos)
+    generated = model.generate(stoi, itos)
     assert isinstance(generated, str)
-    assert generated[0] == "H"
+    assert all(char in stoi.keys() for char in generated)
     assert len(generated) == model.max_new_tokens + 1

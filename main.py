@@ -6,7 +6,6 @@ training or text generation based on configuration and model type.
 
 import argparse
 import os
-import random
 
 import torch
 
@@ -90,9 +89,7 @@ def run_model(
     if model.training:
         optimize_and_train(model, data)
     else:
-        seed_char = random.choice(list(stoi.keys()))
-        start_idx = stoi[seed_char]
-        generated_text = model.generate(start_idx, itos)
+        generated_text = model.generate(stoi, itos)
         print(generated_text)
 
 

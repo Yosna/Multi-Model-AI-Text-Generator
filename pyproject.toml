@@ -11,7 +11,10 @@ omit = [
 ]
 
 [tool.coverage.report]
-exclude_lines = ['if __name__ == .__main__.:']
+exclude_lines = [
+    'if __name__ == .__main__.:',
+    '\.\.\.',
+]
 
 [tool.flake8]
 docstring-convention = 'google'

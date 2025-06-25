@@ -173,26 +173,6 @@ class BaseLanguageModel(nn.Module):
                 print(f"Best Loss this training session: {best_loss}")
         return overfit, best_loss, wait
 
-    def new_token(self, logits: torch.Tensor) -> torch.Tensor:
-        """Generate the next token in the sequence using the model's predictions.
-
-        Args:
-            logits (torch.Tensor): Model predictions of shape (B, T, C)
-                - B: batch size
-                - T: sequence length
-                - C: vocabulary size
-
-        Returns:
-            torch.Tensor: Next token index of shape (B, 1)
-        """
-        # Focus on the last time step
-        logits = logits[:, -1, :]
-        # Convert logits to probabilities
-        probs = F.softmax(logits / self.temperature, dim=-1)
-        # Sample from the probability distribution
-        next_idx = torch.multinomial(probs, num_samples=1)
-        return next_idx
-
     def save_checkpoint(self, step: int, val_loss: float) -> None:
         """Save a model checkpoint and rotate older checkpoints.
 
