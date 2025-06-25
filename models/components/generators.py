@@ -1,5 +1,6 @@
 """Text generation strategies for language models."""
 
+import logging
 import random
 from typing import Protocol
 
@@ -7,6 +8,8 @@ import torch
 import torch.nn.functional as F
 
 from utils.data_utils import decode_data
+
+logger = logging.getLogger(__name__)
 
 
 class Sampler(Protocol):
@@ -31,6 +34,7 @@ class MultinomialSampler:
             temperature (float): The temperature for sampling.
         """
         self.temperature = temperature
+        logger.debug(f"Initialized MultinomialSampler with temperature: {temperature}")
 
     def get_next_token(self, logits: torch.Tensor) -> torch.Tensor:
         """Sample the next token index from the model's logits.
@@ -43,7 +47,10 @@ class MultinomialSampler:
         """
         logits = logits[:, -1, :]
         probs = F.softmax(logits / self.temperature, dim=-1)
-        return torch.multinomial(probs, num_samples=1)
+        next_token = torch.multinomial(probs, num_samples=1)
+
+        logger.debug(f"Sampled token index: {next_token.item()}")
+        return next_token
 
 
 class ArgmaxSampler:
@@ -51,7 +58,7 @@ class ArgmaxSampler:
 
     def __init__(self) -> None:
         """Initialize the argmax sampler."""
-        pass
+        logger.debug("Initialized ArgmaxSampler")
 
     def get_next_token(self, logits: torch.Tensor) -> torch.Tensor:
         """Select the most likely token index from the model's logits.
@@ -63,7 +70,10 @@ class ArgmaxSampler:
             torch.Tensor: The index of the next token.
         """
         logits = logits[:, -1, :]
-        return torch.argmax(logits, dim=-1, keepdim=True)
+        next_token = torch.argmax(logits, dim=-1, keepdim=True)
+
+        logger.debug(f"Selected token index (argmax): {next_token.item()}")
+        return next_token
 
 
 class RandomTextGenerator:
@@ -92,6 +102,11 @@ class RandomTextGenerator:
         self.stoi = stoi
         self.itos = itos
 
+        logger.debug(
+            f"Initialized RandomTextGenerator with start_idx: {self.start_idx}"
+        )
+        logger.debug(f"Vocabulary size: {len(stoi)} tokens")
+
     def tokens(self, model) -> torch.Tensor:
         """Generate tokens from the model.
 
@@ -101,16 +116,22 @@ class RandomTextGenerator:
         Returns:
             torch.Tensor: The generated sequence of token indices.
         """
+        logger.info(f"Starting text generation for {model.max_new_tokens} tokens")
+
         model.eval()
         tokens = torch.tensor([self.start_idx], dtype=torch.long, device=model.device)
         idx = torch.tensor([[self.start_idx]], dtype=torch.long, device=model.device)
 
-        for _ in range(model.max_new_tokens):
+        for i in range(model.max_new_tokens):
             logits = model(idx)
             next_idx = self.sampler.get_next_token(logits)
             idx = next_idx
             tokens = torch.cat((tokens, next_idx.flatten()), dim=0)
 
+            if (i + 1) % 100 == 0:
+                logger.debug(f"Generated {i + 1}/{model.max_new_tokens} tokens")
+
+        logger.info(f"Text generation completed: {len(tokens)} tokens")
         return tokens
 
     def output(self, model) -> str:
@@ -122,7 +143,15 @@ class RandomTextGenerator:
         Returns:
             str: The generated text.
         """
-        return decode_data(self.tokens(model), self.itos, model.token_level)
+        tokens = self.tokens(model)
+        text = decode_data(tokens, self.itos, model.token_level)
+
+        logger.info(f"Generated text length: {len(text)} characters")
+        logger.debug(
+            f"Generated text preview: {text[:100]}{'...' if len(text) > 100 else ''}"
+        )
+
+        return text
 
 
 class Generators:

@@ -16,9 +16,12 @@ Example:
     python -m run dashboard
 """
 
+import logging
 import subprocess
 import time
 import webbrowser
+
+logger = logging.getLogger(__name__)
 
 
 def run_dashboard(
@@ -43,12 +46,14 @@ def run_dashboard(
     Raises:
         FileNotFoundError: If optuna-dashboard is not installed
     """
-    print(f"Launching Optuna Dashboard at {dashboard_url} for database {database}")
+    logger.info(
+        f"Launching Optuna Dashboard at {dashboard_url} for database {database}"
+    )
     try:
         subprocess.Popen(["optuna-dashboard", f"sqlite:///{database}"])
         time.sleep(1)
         webbrowser.open(dashboard_url)
-        print(f"Optuna Dashboard is running at {dashboard_url}")
+        logger.info(f"Optuna Dashboard is running at {dashboard_url}")
     except FileNotFoundError:
         raise FileNotFoundError(
             """

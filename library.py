@@ -10,9 +10,12 @@ Includes:
 - _load_from_huggingface: Helper for loading text fields from Hugging Face datasets.
 """
 
+import logging
 import os
 
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
+
+logger = logging.getLogger(__name__)
 
 DATASET_LIBRARY = {
     "news": {  # Dataset size: 0.03 GB
@@ -78,12 +81,32 @@ def _load_from_local(directory: str, extension: str) -> str:
     Returns:
         str: Newline-separated contents of all matching files.
     """
+    logger.debug(f"Loading local files from {directory} with extension {extension}")
+
+    files = sorted(os.listdir(directory))
+    matching_files = [file for file in files if file.endswith(extension)]
+    logger.debug(f"Found {len(matching_files)} files matching extension {extension}")
+
     text = ""
-    for file in sorted(os.listdir(directory)):
-        if file.endswith(extension):
-            path = os.path.join(directory, file)
-            with open(path, "r", encoding="utf-8") as f:
-                text += f"{f.read()}\n"
+    total_size = 0
+    for i, file in enumerate(matching_files):
+        path = os.path.join(directory, file)
+        file_size = os.path.getsize(path)
+        total_size += file_size
+
+        logger.debug(
+            f"Loading file {i+1}/{len(matching_files)}: {file} ({file_size} bytes)"
+        )
+
+        with open(path, "r", encoding="utf-8") as f:
+            file_text = f.read()
+            text += f"{file_text}\n"
+
+    logger.info(
+        f"Loaded {len(matching_files)} files, "
+        f"total size: {total_size} bytes, "
+        f"text length: {len(text)} characters"
+    )
     return text
 
 
@@ -109,16 +132,36 @@ def _load_from_huggingface(
     Raises:
         ValueError: If the field is not found in the dataset.
     """
+    logger.debug(
+        f"Loading HuggingFace dataset: {data_name}, config: {config_name}, "
+        f"split: {split}, field: {field}"
+    )
+
     dataset = load_dataset(data_name, config_name, split=split)
     if isinstance(dataset, dict):
         dataset = dataset[split]
+
+    if isinstance(dataset, Dataset):
+        dataset_size = len(dataset)
+        logger.debug(f"Dataset loaded with {dataset_size} examples")
+    else:
+        logger.debug("Dataset loaded with unknown number of examples")
+
+    logger.debug(f"Available fields: {dataset.column_names}")
 
     if dataset.column_names and field not in dataset.column_names:
         raise ValueError(
             f"Field {field} not found in dataset. Fields: {dataset.column_names}"
         )
 
-    return "\n".join([data[field] for data in dataset])  # type: ignore
+    lines = [data[field] for data in dataset]  # type: ignore
+    text = "\n".join(lines)
+
+    logger.info(
+        f"Extracted text from {len(lines)} examples, "
+        f"total length: {len(text)} characters"
+    )
+    return text
 
 
 def get_dataset(source: str, locations: dict[str, dict[str, str]]) -> str:
@@ -141,15 +184,20 @@ def get_dataset(source: str, locations: dict[str, dict[str, str]]) -> str:
         ValueError: If the specified library dataset is not found in DATASET_LIBRARY.
         ValueError: If the dataset source is unknown.
     """
+    logger.info(f"Loading dataset from source: {source}")
+
     if source == "local":
         local = locations["local"]
+        logger.debug(f"Local dataset config: {local}")
         return _load_from_local(local["directory"], local["extension"])
     elif source == "library":
         lib = locations["library"]
+        logger.debug(f"Library dataset config: {lib}")
         if lib["data_name"] not in DATASET_LIBRARY:
             raise ValueError(f"No {lib['data_name']} dataset found in library")
         return _load_from_huggingface(**DATASET_LIBRARY[lib["data_name"]])
     elif source == "huggingface":
+        logger.debug(f"HuggingFace dataset config: {locations['huggingface']}")
         return _load_from_huggingface(**locations["huggingface"])
     else:
         raise ValueError(f"Unknown dataset source: {source}")

@@ -133,8 +133,8 @@ def test_main(tmp_path, model):
                 build_file(tmp_path, "config.json", get_test_config(tmp_path)),
             )
             main_ran_successfully = True
-        except Exception as e:
-            print(e)
+        except Exception:
+            pass
     assert main_ran_successfully
 
 
@@ -153,8 +153,8 @@ def test_validate_model(tmp_path, model):
             itos={0: "!", 1: "H", 2: "e", 3: "l", 4: "o"},
         )
         validate_model_ran_successfully = True
-    except Exception as e:
-        print(e)
+    except Exception:
+        pass
     assert validate_model_ran_successfully
 
 
@@ -172,8 +172,8 @@ def test_run_model_training(tmp_path, model):
             itos={0: "!", 1: "H", 2: "e", 3: "l", 4: "o"},
         )
         run_model_ran_successfully = True
-    except Exception as e:
-        print(e)
+    except Exception:
+        pass
     assert run_model_ran_successfully
 
 
@@ -191,8 +191,8 @@ def test_run_model_generation(tmp_path, model):
             itos={0: "!", 1: "H", 2: "e", 3: "l", 4: "o"},
         )
         run_model_ran_successfully = True
-    except Exception as e:
-        print(e)
+    except Exception:
+        pass
     assert run_model_ran_successfully
 
 

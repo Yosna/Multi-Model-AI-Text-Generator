@@ -6,9 +6,12 @@ supported models and features.
 """
 
 import argparse
+import logging
 from typing import Any
 
 from utils.io_utils import load_config, save_config
+
+logger = logging.getLogger(__name__)
 
 # Constants for boolean string values
 TRUE_STRINGS = ["true", "on", "yes", "1"]
@@ -42,18 +45,19 @@ def false_string(arg: str) -> bool:
 
 
 def set_arg_bool(arg: Any) -> Any:
-    """Convert a string to a boolean value if it matches true/false patterns.
+    """Convert string boolean arguments to actual boolean values.
 
     Args:
-        arg: The argument to potentially convert to boolean
+        arg: The argument to convert
 
     Returns:
-        Any: Boolean if matching true/false patterns, otherwise the original value
+        Any: The converted argument (bool if it was a boolean string, or unchanged)
     """
-    if true_string(arg):
-        arg = True
-    elif false_string(arg):
-        arg = False
+    if isinstance(arg, str):
+        if true_string(arg):
+            arg = True
+        elif false_string(arg):
+            arg = False
     return arg
 
 
@@ -69,6 +73,9 @@ def parse_config(args: argparse.Namespace, cfg_path: str) -> None:
         args (argparse.Namespace): Parsed command line arguments
         cfg_path (str): Path to the configuration file
     """
+    logger.debug(f"Parsing configuration from {cfg_path}")
+    logger.debug(f"Model: {args.model}")
+
     config = load_config(cfg_path)
     models = config.get("models", {})
     model_options = config.get("model_options", {})
@@ -86,15 +93,26 @@ def parse_config(args: argparse.Namespace, cfg_path: str) -> None:
         "visualization": visualization,
     }
 
-    for setting in config_sections.values():
+    config_edited = False
+    for section_name, setting in config_sections.items():
         for key in setting:
             if hasattr(args, key):
                 arg = getattr(args, key)
-                arg = arg if isinstance(arg, int | float) else set_arg_bool(arg)
-                matching_type = isinstance(arg, type(setting[key]))
-                if arg is not None and matching_type:
-                    setting[key] = arg
-    save_config(config, cfg_path)
+                if arg is not None:
+                    arg = arg if isinstance(arg, int | float) else set_arg_bool(arg)
+                    matching_type = isinstance(arg, type(setting[key]))
+                    if matching_type and arg != setting[key]:
+                        logger.debug(
+                            f"Updating {section_name}.{key}: {setting[key]} -> {arg}"
+                        )
+                        setting[key] = arg
+                        config_edited = True
+
+    if config_edited:
+        logger.info("Configuration updated with command line arguments")
+        save_config(config, cfg_path)
+    else:
+        logger.debug("No configuration changes were made")
 
 
 def add_arg(

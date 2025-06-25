@@ -1,6 +1,7 @@
 """Base class and shared utilities for all language models."""
 
 import json
+import logging
 import os
 import shutil
 import time
@@ -11,6 +12,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from utils.io_utils import get_config
+
+logger = logging.getLogger(__name__)
 
 
 class BaseLanguageModel(nn.Module):
@@ -69,6 +72,11 @@ class BaseLanguageModel(nn.Module):
             config["runtime"] keys are set as attributes on the model instance.
         """
         super().__init__()
+        logger.debug(
+            f"Initializing {model_name} model with vocab_size={vocab_size}, "
+            f"token_level={token_level}"
+        )
+
         self.name: str = model_name
         self.cfg_path: str = cfg_path
         self.vocab_size: int | None = vocab_size
@@ -84,14 +92,21 @@ class BaseLanguageModel(nn.Module):
         self.save_model = model_options.get("save_model", False)
         self.temperature = model_options.get("temperature", 1.0)
 
+        logger.debug(
+            f"Model options: save_model={self.save_model}, "
+            f"temperature={self.temperature}"
+        )
+
         # Set all runtime config keys as attributes
         for key, value in config.get("runtime", {}).items():
             setattr(self, key, value)
+            logger.debug(f"Set runtime attribute: {key} = {value}")
 
         # Automatically use GPU if available, otherwise CPU
         self.device: torch.device = (
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
+        logger.info(f"Model will use device: {self.device}")
 
     def train_step(
         self, xb: torch.Tensor, yb: torch.Tensor, optimizer: torch.optim.Optimizer
@@ -162,15 +177,18 @@ class BaseLanguageModel(nn.Module):
         overfit = False
         loss_improved = val_loss < best_loss
         if loss_improved:
+            logger.debug(f"Loss improved: {best_loss:.6f} -> {val_loss:.6f}")
             best_loss = val_loss
             wait = 0
         else:
             wait += 1
-            print(f"Loss did not improve. Waiting... ({wait}/{self.patience})")
+            logger.warning(f"Loss did not improve. Waiting... ({wait}/{self.patience})")
             if wait >= self.patience:
                 overfit = True
-                print("Stopping due to overfitting.")
-                print(f"Best Loss this training session: {best_loss}")
+                logger.warning(
+                    "Stopping due to overfitting. "
+                    f"Best Loss this training session: {best_loss}",
+                )
         return overfit, best_loss, wait
 
     def save_checkpoint(self, step: int, val_loss: float) -> None:
@@ -184,6 +202,8 @@ class BaseLanguageModel(nn.Module):
             step (int): Current training step.
             val_loss (float): Validation loss at this step.
         """
+        logger.debug(f"Saving checkpoint at step {step} with val_loss {val_loss:.6f}")
+
         os.makedirs(self.dir_path, exist_ok=True)
 
         # Shift existing checkpoints up by 1 (e.g. checkpoint_1 -> checkpoint_2)
@@ -192,9 +212,11 @@ class BaseLanguageModel(nn.Module):
             next_dir = os.path.join(self.dir_path, f"checkpoint_{i + 1}")
 
             if os.path.exists(next_dir):
+                logger.debug(f"Removing old checkpoint: {next_dir}")
                 shutil.rmtree(next_dir)
 
             if os.path.exists(prev_dir):
+                logger.debug(f"Moving checkpoint: {prev_dir} -> {next_dir}")
                 shutil.move(prev_dir, next_dir)
 
         # Save current model state and metadata
@@ -211,7 +233,7 @@ class BaseLanguageModel(nn.Module):
         with open(self.meta_path, "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=4)
 
-        print(f"Saved step {step} checkpoint to {self.ckpt_path}")
+        logger.info(f"Saved step {step} checkpoint to {self.ckpt_path}")
 
     def generate(self, *_, **__):
         """Generate text from the model.

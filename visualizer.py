@@ -6,6 +6,7 @@ Includes:
 - save_plot: Save matplotlib plots with timestamped filenames.
 """
 
+import logging
 import os
 from datetime import datetime
 from typing import Any
@@ -13,6 +14,8 @@ from typing import Any
 import matplotlib.pyplot as plt
 
 from models.registry import ModelRegistry as Model
+
+logger = logging.getLogger(__name__)
 
 
 def plot_losses(
@@ -40,12 +43,19 @@ def plot_losses(
             - weight (float): Smoothing weight (0-1)
             - save_plot (bool): Whether to save the plot
     """
+    logger.debug(f"Creating loss plot for {model.name} model")
+    logger.debug(
+        f"Loss data: {len(losses)} training steps, {len(val_losses)} validation points"
+    )
+
     steps = range(len(losses))
     val_steps = [i * model.interval for i in range(len(val_losses))]
 
     if visualization.get("smooth_loss", False):
+        logger.debug("Applying smoothing to training loss")
         losses = smooth(losses, visualization.get("weight", 0.9))
     if visualization.get("smooth_val_loss", False):
+        logger.debug("Applying smoothing to validation loss")
         val_losses = smooth(val_losses, visualization.get("weight", 0.9))
 
     plt.plot(steps, losses, label="Training Loss")
@@ -59,10 +69,13 @@ def plot_losses(
 
     full_training_run = step_divisor == 1
     if visualization.get("save_plot", False) and full_training_run:
+        logger.debug("Saving loss plot")
         save_plot(model, plt, "losses")
     if visualization.get("show_plot", False) and full_training_run:
+        logger.debug("Displaying loss plot")
         plt.show()
     if not full_training_run:
+        logger.debug("Closing plot (trial run)")
         plt.close("all")
 
 
@@ -77,6 +90,8 @@ def smooth(values: list[float], weight: float) -> list[float]:
     Returns:
         list[float]: The smoothed values.
     """
+    logger.debug(f"Applying exponential smoothing with weight: {weight}")
+
     smoothed_values = []
     last_value = values[0]
 
@@ -85,6 +100,7 @@ def smooth(values: list[float], weight: float) -> list[float]:
         smoothed_values.append(next_value)
         last_value = next_value
 
+    logger.debug(f"Smoothed {len(values)} values")
     return smoothed_values
 
 
@@ -99,7 +115,12 @@ def save_plot(model: Model.BaseLM, plt: Any, plot_name: str) -> None:
         plt (Any): The matplotlib pyplot module.
         plot_name (str): A label for the plot (used in the filename).
     """
+    logger.debug(f"Saving plot '{plot_name}' for model {model.name}")
+
     os.makedirs(model.plot_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{model.name}_{plot_name}_{timestamp}.png"
-    plt.savefig(os.path.join(model.plot_dir, filename))
+    filepath = os.path.join(model.plot_dir, filename)
+
+    plt.savefig(filepath)
+    logger.info(f"Plot saved to: {filepath}")

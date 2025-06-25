@@ -542,7 +542,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, model/CLI behavior, and profiling.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 196 unit tests, 100% coverage, 975 stmts / 0 miss
+- **Statistics**: 196 unit tests, 100% coverage, 998 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest
@@ -558,6 +558,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
   ```
 - Test output will show which tests passed or failed, and coverage will report which lines are tested.
 - Coverage includes data processing, plotting, model logic, CLI argument parsing, tuning, profiling, and more.
+  - Logger/debug lines are excluded from coverage analysis (see `.coveragerc`/`pyproject.toml`).
 
 ## Future Improvements
 

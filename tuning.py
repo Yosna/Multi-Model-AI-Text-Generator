@@ -12,6 +12,8 @@ Includes:
 - Configurable tuning ranges and optimization parameters
 """
 
+import logging
+
 import optuna
 import torch
 from optuna import pruners
@@ -20,6 +22,8 @@ from models.registry import ModelRegistry as Model
 from training import train
 from utils.io_utils import get_config, load_config, save_config
 from utils.model_utils import get_model
+
+logger = logging.getLogger(__name__)
 
 
 def optimize_and_train(model: Model.BaseLM, data: torch.Tensor):
@@ -171,7 +175,7 @@ def create_pruner(model: Model.BaseLM):
             reduction_factor=hyperband.get("reduction_factor", 2),
         )
     else:
-        print(
+        logger.warning(
             f"""
             Unknown pruner: {pruner_name}
             Please use one of the following pruners:

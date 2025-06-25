@@ -5,6 +5,7 @@ training or text generation based on configuration and model type.
 """
 
 import argparse
+import logging
 import os
 
 import torch
@@ -17,6 +18,13 @@ from utils.data_utils import encode_data
 from utils.io_utils import get_config
 from utils.model_utils import build_vocab, create_mappings, get_model
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
+logger = logging.getLogger(__name__)
+
 
 def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
     """Prepare data, initialize model, and run training or generation.
@@ -25,18 +33,31 @@ def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
         args (argparse.Namespace): Parsed command-line arguments.
         cfg_path (str): Path to the configuration file.
     """
+    logger.info(f"Starting main execution with model: {args.model}")
+    logger.debug(f"Configuration file: {cfg_path}")
+
     parse_config(args, cfg_path)
+    logger.debug("Configuration parsed and updated")
 
     model_name = args.model.lower()
     token_level = get_config(cfg_path, "model_options").get("token_level", "char")
     datasets = get_config(cfg_path, "datasets")
+
+    logger.info(f"Loading dataset with token_level: {token_level}")
     text = get_dataset(datasets["source"], datasets["locations"])
+
+    logger.info("Building vocabulary and mappings")
     tokens, vocab, vocab_size = build_vocab(text, token_level)
     stoi, itos = create_mappings(vocab)
+
+    logger.info("Encoding data")
     data = encode_data(tokens, stoi)
+
+    logger.info("Creating model")
     config = get_config(cfg_path, "models")
     model = get_model(model_name, config, cfg_path, vocab_size, token_level)
 
+    logger.info("Validating model")
     validate_model(model, text, data, stoi, itos)
 
 
@@ -56,10 +77,14 @@ def validate_model(
         stoi (dict[str, int]): Character-to-index mapping.
         itos (dict[int, str]): Index-to-character mapping.
     """
+    logger.debug(f"Validating model type: {model.name}")
+
     if model.name == "distilgpt2":
+        logger.info("Running DistilGPT2 model for text generation")
         generated_text = model.run(text)
-        print(generated_text)
+        logger.info(generated_text)
     else:
+        logger.info(f"Running {model.name} model")
         run_model(model, data, stoi, itos)
 
 
@@ -80,17 +105,27 @@ def run_model(
         stoi (dict[str, int]): Character-to-index mapping.
         itos (dict[int, str]): Index-to-character mapping.
     """
+    logger.debug(
+        f"Running model in {'training' if model.training else 'generation'} mode"
+    )
+
     if os.path.exists(model.ckpt_path):
+        logger.info(f"Loading checkpoint from {model.ckpt_path}")
         try:
             model.load_state_dict(torch.load(model.ckpt_path))
+            logger.info("Checkpoint loaded successfully")
         except Exception as e:
-            print(f"Error loading model: {e}")
+            logger.error(f"Error loading model: {e}")
+    else:
+        logger.debug("No checkpoint found, starting with a new model")
 
     if model.training:
+        logger.info("Starting model training")
         optimize_and_train(model, data)
     else:
+        logger.info("Starting text generation")
         generated_text = model.generate(stoi, itos)
-        print(generated_text)
+        logger.info(generated_text)
 
 
 if __name__ == "__main__":
