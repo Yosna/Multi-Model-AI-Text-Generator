@@ -55,7 +55,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Support for local files, Hugging Face datasets, and built-in library datasets
 - Built-in profiling for performance analysis
 - Interactive GUI for editing `config.json`
-- **Statistics**: 185 unit tests, 100% coverage, 993 stmts / 0 miss
+- **Statistics**: 196 unit tests, 100% coverage, 998 stmts / 0 miss
 
 ## Model Architectures
 
