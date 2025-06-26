@@ -11,7 +11,12 @@ from models.registry import ModelRegistry as Model
 
 def get_transformer_config():
     return {
-        "model_options": {},
+        "model_options": {
+            "sampler": "multinomial",
+            "save_model": True,
+            "token_level": "char",
+            "temperature": 1.0,
+        },
         "runtime": {
             "training": True,
             "steps": 1,
@@ -41,17 +46,13 @@ def build_file(tmp_path, file_name, content):
 
 def get_transformer_model(
     tmp_path,
-    config: dict[str, Any] | None = None,
-    cfg_path: str | None = None,
+    config: dict[str, Any] = get_transformer_config(),
     vocab_size: int = 5,
-    token_level: str = "char",
 ):
-    if config is None:
-        config = get_transformer_config()
-    if cfg_path is None:
-        cfg_path = str(build_file(tmp_path, "config.json", json.dumps(config)))
+    cfg_path = str(build_file(tmp_path, "config.json", json.dumps(config)))
+    model_options = config["model_options"]
 
-    return Model.TransformerLM(config, cfg_path, vocab_size, token_level)
+    return Model.TransformerLM(config, cfg_path, vocab_size, model_options)
 
 
 def test_transformer_model(tmp_path):
@@ -60,16 +61,14 @@ def test_transformer_model(tmp_path):
 
 
 def test_transformer_model_no_vocab_size(tmp_path):
+    config = get_transformer_config()
+    cfg_path = str(build_file(tmp_path, "config.json", json.dumps(config)))
     with pytest.raises(ValueError):
         Model.TransformerLM(
-            config=get_transformer_config(),
-            cfg_path=str(
-                build_file(
-                    tmp_path, "config.json", json.dumps(get_transformer_config())
-                )
-            ),
+            config=config,
+            cfg_path=cfg_path,
             vocab_size=0,
-            token_level="char",
+            model_options=config["model_options"],
         )
 
 

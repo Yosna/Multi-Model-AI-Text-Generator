@@ -47,19 +47,21 @@ def get_test_config():
 
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
-        config = get_test_config()["models"]["mock"]
+        mock_config = get_test_config()["models"]["mock"]
+        model_options = get_test_config()["model_options"]
         super().__init__(
             model_name="mock",
-            config=config,
+            config=mock_config,
             cfg_path=os.path.join(base_dir, "config.json"),
             vocab_size=10,
+            model_options=model_options,
         )
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
 
-        for key, value in config.get("hparams", {}).items():
+        for key, value in mock_config.get("hparams", {}).items():
             setattr(self, key, value)
 
         self.device = torch.device("cpu")
@@ -99,8 +101,9 @@ def test_train(tmp_path):
 
 def test_validate_data(tmp_path):
     build_file(tmp_path, "config.json", json.dumps(get_test_config()))
+    model = MockModel(str(tmp_path))
     overfit, best_loss, wait = validate_data(
-        model=MockModel(str(tmp_path)),
+        model=model,
         data=torch.tensor([i for i in range(100)]),
         step=1,
         step_divisor=1,
@@ -109,6 +112,7 @@ def test_validate_data(tmp_path):
         wait=0,
         val_losses=[],
     )
+    print(model.save_model)
     assert overfit == False
     assert best_loss > 0
     assert wait == 0

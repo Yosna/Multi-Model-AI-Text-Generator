@@ -13,8 +13,10 @@ from tuning import create_pruner, make_objective, optimize_and_train
 def get_test_config():
     return {
         "model_options": {
+            "sampler": "multinomial",
             "save_model": False,
             "token_level": "char",
+            "temperature": 1.0,
         },
         "models": {
             "bigram": {
@@ -85,16 +87,17 @@ def get_test_config():
 
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
-        config = get_test_config()["models"]["bigram"]
+        config = get_test_config()
+        bigram_config = config["models"]["bigram"]
         super().__init__(
             model_name="bigram",
-            config=config,
+            config=bigram_config,
             cfg_path=os.path.join(base_dir, "config.json"),
             vocab_size=100,
-            token_level="char",
+            model_options=config["model_options"],
         )
 
-        for key, value in config.get("hparams", {}).items():
+        for key, value in bigram_config.get("hparams", {}).items():
             setattr(self, key, value)
 
         self.device = torch.device("cpu")

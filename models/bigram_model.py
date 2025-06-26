@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 from models.base_model import BaseLanguageModel
-from models.components.generators import Generators, Samplers
+from models.components.generators import Generators
 
 
 class BigramLanguageModel(BaseLanguageModel):
@@ -37,7 +37,11 @@ class BigramLanguageModel(BaseLanguageModel):
     lr: float
 
     def __init__(
-        self, config: dict[str, Any], cfg_path: str, vocab_size: int, token_level: str
+        self,
+        config: dict[str, Any],
+        cfg_path: str,
+        vocab_size: int,
+        model_options: dict[str, Any],
     ) -> None:
         """Initialize the bigram model and its parameters.
 
@@ -45,8 +49,7 @@ class BigramLanguageModel(BaseLanguageModel):
             config (dict): Configuration dictionary for the model.
             cfg_path (str): Path to the config file.
             vocab_size (int): Number of unique tokens in the vocabulary.
-            token_level (str): Token level to use for vocabulary building.
-                Options: "char" (default), or "word"
+            model_options (dict[str, Any]): Model options.
 
         Raises:
             ValueError: If vocab_size is not set or is too large for the model.
@@ -59,7 +62,7 @@ class BigramLanguageModel(BaseLanguageModel):
             config=config,
             cfg_path=cfg_path,
             vocab_size=vocab_size,
-            token_level=token_level,
+            model_options=model_options,
         )
 
         # Set all hparams config keys as attributes
@@ -113,6 +116,6 @@ class BigramLanguageModel(BaseLanguageModel):
         Returns:
             str: The generated text.
         """
-        generator = Generators.Text.Random(stoi, itos, Samplers.Multinomial())
+        generator = Generators.Text.Random(stoi, itos, self.sampler)
         output = generator.output(self)
         return output

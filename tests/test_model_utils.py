@@ -120,10 +120,10 @@ def test_get_batch(tmp_path):
 
 def test_get_model():
     config = get_test_config()["models"]
-    bigram = get_model("bigram", config, "config.json", 10, "char")
-    lstm = get_model("lstm", config, "config.json", 10, "char")
-    gru = get_model("gru", config, "config.json", 10, "char")
-    distilgpt2 = get_model("distilgpt2", config, "config.json", 10, "char")
+    bigram = get_model("bigram", config, "config.json", 10)
+    lstm = get_model("lstm", config, "config.json", 10)
+    gru = get_model("gru", config, "config.json", 10)
+    distilgpt2 = get_model("distilgpt2", config, "config.json", 10)
     assert bigram.__class__.__name__ == "BigramLanguageModel"
     assert lstm.__class__.__name__ == "LSTMLanguageModel"
     assert gru.__class__.__name__ == "GRULanguageModel"
@@ -133,4 +133,4 @@ def test_get_model():
 def test_get_model_error():
     config = get_test_config()["models"]
     with pytest.raises(ValueError):
-        get_model("test", config, "config.json", 10, "char")
+        get_model("test", config, "config.json", 10, {})

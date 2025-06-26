@@ -236,6 +236,7 @@ def _set_str_input(
     options = {
         "source": {"data": sources, "when": when("datasets")},
         "data_name": {"data": libraries, "when": when("library")},
+        "sampler": {"data": ["multinomial", "argmax"], "when": when("model_options")},
         "token_level": {"data": ["char", "word"], "when": True},
         "pruner": {"data": ["median", "halving", "hyperband"], "when": True},
     }

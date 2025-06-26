@@ -11,7 +11,12 @@ from models.registry import ModelRegistry as Model
 
 def get_bigram_config():
     return {
-        "model_options": {},
+        "model_options": {
+            "sampler": "multinomial",
+            "save_model": True,
+            "token_level": "char",
+            "temperature": 1.0,
+        },
         "runtime": {
             "training": True,
             "batch_size": 2,
@@ -35,17 +40,12 @@ def build_file(tmp_path, file_name, content):
 
 def get_bigram_model(
     tmp_path,
-    config: dict[str, Any] | None = None,
-    cfg_path: str | None = None,
+    config: dict[str, Any] = get_bigram_config(),
     vocab_size: int = 10,
-    token_level: str = "char",
 ):
-    if config is None:
-        config = get_bigram_config()
-    if cfg_path is None:
-        cfg_path = str(build_file(tmp_path, "config.json", json.dumps(config)))
-
-    return Model.BigramLM(config, cfg_path, vocab_size, token_level)
+    cfg_path = str(build_file(tmp_path, "config.json", json.dumps(config)))
+    model_options = config["model_options"]
+    return Model.BigramLM(config, cfg_path, vocab_size, model_options)
 
 
 def test_bigram_model(tmp_path):
@@ -54,23 +54,21 @@ def test_bigram_model(tmp_path):
 
 
 def test_bigram_model_vocab_errors(tmp_path):
+    config = get_bigram_config()
+    cfg_path = build_file(tmp_path, "config.json", json.dumps(config))
     with pytest.raises(ValueError):
         Model.BigramLM(
-            config=get_bigram_config(),
-            cfg_path=build_file(
-                tmp_path, "config.json", json.dumps(get_bigram_config())
-            ),
+            config=config,
+            cfg_path=cfg_path,
             vocab_size=0,
-            token_level="char",
+            model_options=config["model_options"],
         )
     with pytest.raises(ValueError):
         Model.BigramLM(
-            config=get_bigram_config(),
-            cfg_path=build_file(
-                tmp_path, "config.json", json.dumps(get_bigram_config())
-            ),
+            config=config,
+            cfg_path=cfg_path,
             vocab_size=100000,
-            token_level="char",
+            model_options=config["model_options"],
         )
 
 

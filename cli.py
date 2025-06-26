@@ -175,10 +175,12 @@ def parse_model_options(parser: argparse.ArgumentParser) -> None:
     Args:
         parser (argparse.ArgumentParser): The argument parser for model options
     """
+    sampler_help = "Override sampler in config (section: model_options)"
     save_model_help = "Override save_model in config (section: model_options)"
     token_level_help = "Override token_level in config (section: model_options)"
     temperature_help = "Override temperature in config (section: model_options)"
 
+    add_arg(parser, "--sampler", str, "[multinomial | argmax]", sampler_help)
     add_arg(parser, "--save-model", str, BOOL_METAVAR, save_model_help)
     add_arg(parser, "--token-level", str, "[char | word]", token_level_help)
     add_arg(parser, "--temperature", float, "[float]", temperature_help)

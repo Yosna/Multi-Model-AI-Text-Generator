@@ -36,7 +36,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 
 ## Features
 
-- Character-level or word-level tokenization across multiple input files (configurable via `token_level`)
+- Character-level or word-level tokenization across multiple input files (configurable via `token_level` in `model_options`)
 - Dynamic vocabulary and index mapping
 - Modular model registry for Bigram, LSTM, GRU, Transformer, and DistilGPT2 (inference-only)
 - Configurable training and hyperparameter tuning via `config.json`
@@ -44,8 +44,8 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Optuna Dashboard for visualizing hyperparameter optimization studies
 - Adam optimizer with early stopping
 - Automatic checkpoint rotation and resumption with metadata tracking
-- Multinomial sampling for randomized generation
-- Temperature scaling for controllable randomness in generation (configurable via `temperature`)
+- Multinomial and argmax sampling for text generation (configurable via `sampler` in `model_options`)
+- Temperature scaling for controllable randomness in generation (configurable via `temperature` in `model_options`)
 - Comprehensive CLI interface with model selection, runtime, hyperparameter, model options, tuning, and visualization configuration
 - Full unit test coverage (100%) for all modules
 - Tests include generation and training for all models, tuning, visualization, CLI behavior, argument parsing helpers, and profiling
@@ -55,7 +55,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Support for local files, Hugging Face datasets, and built-in library datasets
 - Built-in profiling for performance analysis
 - Interactive GUI for editing `config.json`
-- **Statistics**: 196 unit tests, 100% coverage, 998 stmts / 0 miss
+- **Statistics**: 200 unit tests, 100% coverage, 1011 stmts / 0 miss
 
 ## Model Architectures
 
@@ -108,7 +108,7 @@ You can use any dataset from the Hugging Face Hub by specifying the dataset name
 
 ## Configuration
 
-All behavior is driven by a single `config.json` file. You can edit this file manually or use the user-friendly [Configuration Editor](#configuration-editor).
+All behavior is driven by a single `config.json` file. You can edit this file manually or with the user-friendly [Configuration Editor](#configuration-editor).
 
 <details>
 <summary><b>Example</b> <code>config.json</code> (<i>click to expand</i>)</summary>
@@ -135,6 +135,7 @@ All behavior is driven by a single `config.json` file. You can edit this file ma
   },
 
   "model_options": {
+    "sampler": "multinomial",
     "save_model": true,
     "token_level": "word",
     "temperature": 1.0
@@ -317,7 +318,7 @@ All behavior is driven by a single `config.json` file. You can edit this file ma
 You can configure:
 
 - **Datasets** (`datasets`): Source and location to pull from
-- **Model Options** (`model_options`): Model saving, tokenization level, and temperature scaling for generation
+- **Model Options** (`model_options`): Model saving, tokenization level, temperature scaling for generation, and sampling strategy (`sampler`)
 - **Runtime** (`runtime`): Training and generation settings for each model
 - **Hyperparameters** (`hparams`): Model-specific architecture and optimization parameters
 - **Pruners** (`pruners`): Configuration for Optuna pruners
@@ -380,11 +381,11 @@ A built-in profiling tool is included to help you analyze performance bottleneck
 
 The project provides a flexible CLI for controlling model options, runtime and hyperparameters, tuning options, and visualization:
 
-- **Model Options** (`--save-model`, `--token-level`, `--temperature`)
-- **Runtime** (`--training`, `--steps`, `--interval`, etc.)
-- **Hyperparameters** (`--batch-size`, `--block-size`, `--lr`, etc.)
-- **Tuning Options** (`--auto-tuning`, `--save-tuning`, `--save-study`, etc.)
-- **Visualization** (`--save-plot`, `--show-plot`, `--smooth-loss`, etc.)
+- **Model Options** (`--sampler`, `--save-model`, `--token-level`, ...)
+- **Runtime** (`--training`, `--steps`, `--interval`, ...)
+- **Hyperparameters** (`--batch-size`, `--block-size`, `--lr`, ...)
+- **Tuning Options** (`--auto-tuning`, `--save-tuning`, `--save-study`, ...)
+- **Visualization** (`--save-plot`, `--show-plot`, `--smooth-loss`, ...)
 
 For a full list of arguments, run:
 
@@ -412,6 +413,7 @@ python main.py --help
 - `--max-seq-len`: Override maximum sequence length (transformer)
 - `--num-heads`: Override number of attention heads (transformer)
 - `--ff-dim`: Override feedforward dimension (transformer)
+- `--sampler`: Override sampling strategy for generation (model_options)
 - `--save-model`: Override model saving (model_options)
 - `--token-level`: Override tokenization level (model_options)
 - `--temperature`: Override temperature for generation (model_options)
@@ -542,7 +544,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, model/CLI behavior, and profiling.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 196 unit tests, 100% coverage, 998 stmts / 0 miss
+- **Statistics**: 200 unit tests, 100% coverage, 1011 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest

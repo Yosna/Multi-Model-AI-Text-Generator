@@ -117,6 +117,7 @@ def test_set_list_input(dpg):
         ("type", "test", ["tuning_ranges", "hparam"]),
         ("source", "local", []),
         ("data_name", "test", ["library"]),
+        ("sampler", "multinomial", ["model_options"]),
         ("token_level", "char", []),
         ("pruner", "median", []),
         ("test", "test", []),

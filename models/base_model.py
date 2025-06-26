@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from models.components.generators import Samplers, Sampler
 from utils.io_utils import get_config
 
 logger = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ class BaseLanguageModel(nn.Module):
         config: dict[str, Any],
         cfg_path: str = "config.json",
         vocab_size: int | None = None,
-        token_level: str = "char",
+        model_options: dict[str, Any] = {},
     ) -> None:
         """Initialize the base language model.
 
@@ -65,22 +66,17 @@ class BaseLanguageModel(nn.Module):
             config (dict): Configuration dictionary for the model.
             cfg_path (str): Path to the config file.
             vocab_size (int | None): Number of unique tokens.
-            token_level (str): Token level to use for vocabulary building.
-                Options: "char" (default), or "word"
+            model_options (dict[str, Any]): Model options.
 
         Notes:
             config["runtime"] keys are set as attributes on the model instance.
         """
         super().__init__()
-        logger.debug(
-            f"Initializing {model_name} model with vocab_size={vocab_size}, "
-            f"token_level={token_level}"
-        )
+        logger.debug(f"Initializing {model_name} model with vocab_size={vocab_size}")
 
         self.name: str = model_name
         self.cfg_path: str = cfg_path
         self.vocab_size: int | None = vocab_size
-        self.token_level: str = token_level
         self.dir_path: str = os.path.join("checkpoints", model_name)
         self.plot_dir: str = os.path.join("plots", model_name)
         self.ckpt_dir: str = os.path.join(self.dir_path, "checkpoint_1")
@@ -88,13 +84,15 @@ class BaseLanguageModel(nn.Module):
         self.meta_path: str = os.path.join(self.ckpt_dir, "metadata.json")
 
         # Set model options as attributes
-        model_options = get_config(self.cfg_path, "model_options")
-        self.save_model = model_options.get("save_model", False)
         self.temperature = model_options.get("temperature", 1.0)
+        self.token_level = model_options.get("token_level", "char")
+        sampler = model_options.get("sampler", "multinomial")
+        self.sampler = self._get_sampler(sampler)
+        self.save_model = model_options.get("save_model", False)
 
         logger.debug(
-            f"Model options: save_model={self.save_model}, "
-            f"temperature={self.temperature}"
+            f"Model options: sampler={self.sampler}, save_model={self.save_model}, "
+            f"temperature={self.temperature}, token_level={self.token_level}"
         )
 
         # Set all runtime config keys as attributes
@@ -107,6 +105,26 @@ class BaseLanguageModel(nn.Module):
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
         logger.info(f"Model will use device: {self.device}")
+
+    def _get_sampler(self, name: str) -> Sampler:
+        """Get the sampler class based on the name.
+
+        Args:
+            name (str): Name of the sampler.
+
+        Returns:
+            Sampler: The sampler class.
+
+        Raises:
+            ValueError: If the sampler is not found.
+        """
+        if name.lower() == "multinomial":
+            sampler = Samplers.Multinomial(temperature=self.temperature)
+        elif name.lower() == "argmax":
+            sampler = Samplers.Argmax()
+        else:
+            raise ValueError(f"Sampler {name} not found")
+        return sampler
 
     def train_step(
         self, xb: torch.Tensor, yb: torch.Tensor, optimizer: torch.optim.Optimizer

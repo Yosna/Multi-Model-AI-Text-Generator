@@ -40,7 +40,8 @@ def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
     logger.debug("Configuration parsed and updated")
 
     model_name = args.model.lower()
-    token_level = get_config(cfg_path, "model_options").get("token_level", "char")
+    model_options = get_config(cfg_path, "model_options")
+    token_level = model_options.get("token_level", "char")
     datasets = get_config(cfg_path, "datasets")
 
     logger.info(f"Loading dataset with token_level: {token_level}")
@@ -55,7 +56,7 @@ def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
 
     logger.info("Creating model")
     config = get_config(cfg_path, "models")
-    model = get_model(model_name, config, cfg_path, vocab_size, token_level)
+    model = get_model(model_name, config, cfg_path, vocab_size, model_options)
 
     logger.info("Validating model")
     validate_model(model, text, data, stoi, itos)

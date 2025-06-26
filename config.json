@@ -19,6 +19,7 @@
   },
 
   "model_options": {
+    "sampler": "multinomial",
     "save_model": true,
     "token_level": "char",
     "temperature": 1.0
@@ -35,9 +36,9 @@
         "max_checkpoints": 10
       },
       "hparams": {
-        "batch_size": 32,
-        "block_size": 160,
-        "lr": 0.00029724772007664295
+        "batch_size": 16,
+        "block_size": 32,
+        "lr": 0.001
       }
     },
     "lstm": {

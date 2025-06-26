@@ -104,10 +104,11 @@ def make_objective(model: Model.BaseLM, data: torch.Tensor):
     config = load_config(model.cfg_path)
     models = config.get("models", {})
     model_config = models.get(model.name, {})
+    model_options = model_config.get("model_options", {})
     tuning_options = config.get("tuning_options", {})
     tune = config.get("tuning_ranges", {})
     model = get_model(
-        model.name, models, model.cfg_path, model.vocab_size, model.token_level
+        model.name, models, model.cfg_path, model.vocab_size, model_options
     )
     hparams = model_config.get("hparams", {})
     step_divisor = tuning_options.get("step_divisor", 10)

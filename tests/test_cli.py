@@ -101,12 +101,14 @@ def test_parse_args_invalid(invalid):
 def test_parse_args_model_options():
     cli_args = [
         "main.py",
+        *["--sampler", "multinomial"],
         *["--save-model", "true"],
         *["--token-level", "char"],
         *["--temperature", "1.0"],
     ]
     with patch.object(sys, "argv", cli_args):
         args = parse_args()
+        assert args.sampler == "multinomial"
         assert args.save_model
         assert args.token_level == "char"
         assert args.temperature == 1.0
