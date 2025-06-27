@@ -397,30 +397,28 @@ python main.py --help
 
 <details><summary><b>Available CLI Arguments:</b> (<i>click to expand</i>)</summary><br>
 
-\*_arg for all models_, \*\*_arg for all models excluding distilgpt2_
-
 - `--model`: Select model type (**default**: transformer, **options**: [bigram | lstm | gru | transformer | distilgpt2])
-- `--training`: Toggle training mode \*\*
-- `--steps`: Number of training steps \*\*
-- `--interval`: Validation interval during training \*\*
-- `--max-new-tokens`: Maximum tokens to generate \*
-- `--batch-size`: Override batch size for training \*\*
-- `--block-size`: Override context window size \*
-- `--lr`: Override learning rate \*\*
-- `--embedding-dim`: Override embedding dimension size (LSTM / GRU)
-- `--hidden-size`: Override hidden layer size (LSTM / GRU)
-- `--num-layers`: Override number of model layers (LSTM / GRU / transformer)
-- `--max-seq-len`: Override maximum sequence length (transformer)
-- `--num-heads`: Override number of attention heads (transformer)
-- `--ff-dim`: Override feedforward dimension (transformer)
 - `--generator`: Override text generation strategy (generator_options)
 - `--context-length`: Override context length for prompt generation (generator_options)
 - `--sampler`: Override sampling strategy for generation (generator_options)
 - `--temperature`: Override temperature for generation (generator_options)
 - `--save-model`: Override model saving (model_options)
 - `--token-level`: Override tokenization level (model_options)
-- `--patience`: Early stopping patience (model_options) \*\*
-- `--max-checkpoints`: Maximum checkpoints to keep (model_options) \*\*
+- `--patience`: Early stopping patience (model_options)
+- `--max-checkpoints`: Maximum checkpoints to keep (model_options)
+- `--training`: Toggle training mode (runtime)
+- `--steps`: Number of training steps (runtime)
+- `--interval`: Validation interval during training (runtime)
+- `--max-new-tokens`: Maximum tokens to generate (runtime)
+- `--batch-size`: Override batch size for training (hparams)
+- `--block-size`: Override context window size (hparams)
+- `--lr`: Override learning rate (hparams)
+- `--embedding-dim`: Override embedding dimension size (hparams)
+- `--hidden-size`: Override hidden layer size (hparams)
+- `--num-layers`: Override number of model layers (hparams)
+- `--max-seq-len`: Override maximum sequence length (hparams)
+- `--num-heads`: Override number of attention heads (hparams)
+- `--ff-dim`: Override feedforward dimension (hparams)
 - `--auto-tuning`: Enable/disable hyperparameter tuning (tuning_options)
 - `--save-tuning`: Enable/disable saving tuned hyperparameters (tuning_options)
 - `--save-study`: Enable/disable saving Optuna study (tuning_options)
