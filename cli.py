@@ -61,7 +61,7 @@ def set_arg_bool(arg: Any) -> Any:
     return arg
 
 
-def parse_config(args: argparse.Namespace, cfg_path: str) -> None:
+def parse_config(args: argparse.Namespace, cfg_path: str) -> dict[str, Any]:
     """Parse command line arguments and update the model configuration file.
 
     - Loads the existing configuration
@@ -72,11 +72,15 @@ def parse_config(args: argparse.Namespace, cfg_path: str) -> None:
     Args:
         args (argparse.Namespace): Parsed command line arguments
         cfg_path (str): Path to the configuration file
+
+    Returns:
+        dict[str, Any]: The updated configuration
     """
     logger.debug(f"Parsing configuration from {cfg_path}")
     logger.debug(f"Model: {args.model}")
 
     config = load_config(cfg_path)
+    generator_options = config.get("generator_options", {})
     models = config.get("models", {})
     model_options = config.get("model_options", {})
     model_config = models.get(args.model, {})
@@ -86,6 +90,7 @@ def parse_config(args: argparse.Namespace, cfg_path: str) -> None:
     visualization = config.get("visualization", {})
 
     config_sections = {
+        "generator_options": generator_options,
         "model_options": model_options,
         "runtime": runtime,
         "hparams": hparams,
@@ -109,10 +114,12 @@ def parse_config(args: argparse.Namespace, cfg_path: str) -> None:
                         config_edited = True
 
     if config_edited:
-        logger.info("Configuration updated with command line arguments")
         save_config(config, cfg_path)
+        logger.info("Configuration updated with command line arguments")
     else:
         logger.debug("No configuration changes were made")
+
+    return config
 
 
 def add_arg(
@@ -139,6 +146,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a language model")
 
     parse_model(parser)
+    parse_generator_options(parser)
     parse_model_options(parser)
     parse_runtime(parser)
     parse_hparams(parser)
@@ -164,26 +172,50 @@ def parse_model(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def parse_generator_options(parser: argparse.ArgumentParser) -> None:
+    """Add generator option configuration arguments to the parser.
+
+    Parses arguments for:
+    - Generator type (generator)
+    - Context length (context_length)
+    - Sampling strategy (sampler)
+    - Temperature (temperature)
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser for generator options
+    """
+    generator_help = "Override generator in config (section: generator_options)"
+    context_len_help = "Override context_length in config (section: generator_options)"
+    sampler_help = "Override sampler in config (section: generator_options)"
+    temperature_help = "Override temperature in config (section: generator_options)"
+
+    add_arg(parser, "--generator", str, "[random | prompt]", generator_help)
+    add_arg(parser, "--context-length", int, "[int]", context_len_help)
+    add_arg(parser, "--sampler", str, "[multinomial | argmax]", sampler_help)
+    add_arg(parser, "--temperature", float, "[float]", temperature_help)
+
+
 def parse_model_options(parser: argparse.ArgumentParser) -> None:
     """Add model option configuration arguments to the parser.
 
     Parses arguments for:
     - Model checkpoint saving toggle (save_model)
     - Tokenization level (token_level)
-    - Temperature (temperature)
+    - Early stopping patience (patience)
+    - Maximum number of checkpoints to keep (max_checkpoints)
 
     Args:
         parser (argparse.ArgumentParser): The argument parser for model options
     """
-    sampler_help = "Override sampler in config (section: model_options)"
     save_model_help = "Override save_model in config (section: model_options)"
     token_level_help = "Override token_level in config (section: model_options)"
-    temperature_help = "Override temperature in config (section: model_options)"
+    patience_help = "Override patience in config (section: model_options)"
+    max_checkpoints_help = "Override max_checkpoints in config (section: model_options)"
 
-    add_arg(parser, "--sampler", str, "[multinomial | argmax]", sampler_help)
     add_arg(parser, "--save-model", str, BOOL_METAVAR, save_model_help)
     add_arg(parser, "--token-level", str, "[char | word]", token_level_help)
-    add_arg(parser, "--temperature", float, "[float]", temperature_help)
+    add_arg(parser, "--patience", int, "[int]", patience_help)
+    add_arg(parser, "--max-checkpoints", int, "[int]", max_checkpoints_help)
 
 
 def parse_runtime(parser: argparse.ArgumentParser) -> None:
@@ -193,9 +225,7 @@ def parse_runtime(parser: argparse.ArgumentParser) -> None:
     - Training mode toggle (training)
     - Number of training steps (steps)
     - Evaluation interval (interval)
-    - Early stopping patience (patience)
     - Maximum new tokens for generation (max_new_tokens)
-    - Maximum number of checkpoints to keep (max_checkpoints)
 
     Args:
         parser (argparse.ArgumentParser): The argument parser for runtime values
@@ -203,16 +233,12 @@ def parse_runtime(parser: argparse.ArgumentParser) -> None:
     training_help = "Override training in config (section: runtime)"
     steps_help = "Override steps in config (section: runtime)"
     interval_help = "Override interval in config (section: runtime)"
-    patience_help = "Override patience in config (section: runtime)"
     max_new_tokens_help = "Override max_new_tokens in config (section: runtime)"
-    max_checkpoints_help = "Override max_checkpoints in config (section: runtime)"
 
     add_arg(parser, "--training", str, BOOL_METAVAR, training_help)
     add_arg(parser, "--steps", int, "[int]", steps_help)
     add_arg(parser, "--interval", int, "[int]", interval_help)
-    add_arg(parser, "--patience", int, "[int]", patience_help)
     add_arg(parser, "--max-new-tokens", int, "[int]", max_new_tokens_help)
-    add_arg(parser, "--max-checkpoints", int, "[int]", max_checkpoints_help)
 
 
 def parse_hparams(parser: argparse.ArgumentParser) -> None:

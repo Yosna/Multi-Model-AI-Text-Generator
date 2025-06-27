@@ -54,6 +54,7 @@ def test_set_bool_input_update(dpg):
 @pytest.mark.parametrize(
     "key, value, parents",
     [
+        ("context_length", 128, []),
         ("max_new_tokens", 256, []),
         ("max_checkpoints", 10, []),
         ("steps", 1000, ["runtime"]),
@@ -117,7 +118,8 @@ def test_set_list_input(dpg):
         ("type", "test", ["tuning_ranges", "hparam"]),
         ("source", "local", []),
         ("data_name", "test", ["library"]),
-        ("sampler", "multinomial", ["model_options"]),
+        ("generator", "random", ["generator_options"]),
+        ("sampler", "multinomial", ["generator_options"]),
         ("token_level", "char", []),
         ("pruner", "median", []),
         ("test", "test", []),

@@ -7,6 +7,7 @@ training or text generation based on configuration and model type.
 import argparse
 import logging
 import os
+from pickle import UnpicklingError
 
 import torch
 
@@ -15,7 +16,6 @@ from library import get_dataset
 from models.registry import ModelRegistry as Model
 from tuning import optimize_and_train
 from utils.data_utils import encode_data
-from utils.io_utils import get_config
 from utils.model_utils import build_vocab, create_mappings, get_model
 
 logging.basicConfig(
@@ -36,13 +36,13 @@ def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
     logger.info(f"Starting main execution with model: {args.model}")
     logger.debug(f"Configuration file: {cfg_path}")
 
-    parse_config(args, cfg_path)
+    config = parse_config(args, cfg_path)
     logger.debug("Configuration parsed and updated")
 
     model_name = args.model.lower()
-    model_options = get_config(cfg_path, "model_options")
+    model_options = config.get("model_options", {})
     token_level = model_options.get("token_level", "char")
-    datasets = get_config(cfg_path, "datasets")
+    datasets = config.get("datasets", {})
 
     logger.info(f"Loading dataset with token_level: {token_level}")
     text = get_dataset(datasets["source"], datasets["locations"])
@@ -55,28 +55,21 @@ def main(args: argparse.Namespace, cfg_path: str = "config.json") -> None:
     data = encode_data(tokens, stoi)
 
     logger.info("Creating model")
-    config = get_config(cfg_path, "models")
-    model = get_model(model_name, config, cfg_path, vocab_size, model_options)
+    vocab_data = {"vocab_size": vocab_size, "stoi": stoi, "itos": itos}
+    model_config = {**config["models"], "vocab": vocab_data}
+    model = get_model(model_name, model_config, cfg_path)
 
     logger.info("Validating model")
-    validate_model(model, text, data, stoi, itos)
+    validate_model(model, text, data)
 
 
-def validate_model(
-    model: Model.BaseLM,
-    text: str,
-    data: torch.Tensor,
-    stoi: dict[str, int],
-    itos: dict[int, str],
-) -> None:
+def validate_model(model: Model.BaseLM, text: str, data: torch.Tensor) -> None:
     """Validate the type of model to determine the appropriate run method.
 
     Args:
         model (Model.BaseLM): The model instance.
         text (str): The full dataset text.
         data (torch.Tensor): Encoded dataset tensor.
-        stoi (dict[str, int]): Character-to-index mapping.
-        itos (dict[int, str]): Index-to-character mapping.
     """
     logger.debug(f"Validating model type: {model.name}")
 
@@ -86,15 +79,10 @@ def validate_model(
         logger.info(generated_text)
     else:
         logger.info(f"Running {model.name} model")
-        run_model(model, data, stoi, itos)
+        run_model(model, data)
 
 
-def run_model(
-    model: Model.BaseLM,
-    data: torch.Tensor,
-    stoi: dict[str, int],
-    itos: dict[int, str],
-) -> None:
+def run_model(model: Model.BaseLM, data: torch.Tensor) -> None:
     """Run training or text generation for the model.
 
     Loads from checkpoint if available.
@@ -103,8 +91,9 @@ def run_model(
     Args:
         model (Model.BaseLM): The model instance.
         data (torch.Tensor): Encoded dataset tensor.
-        stoi (dict[str, int]): Character-to-index mapping.
-        itos (dict[int, str]): Index-to-character mapping.
+
+    Raises:
+        UnpicklingError: If there is an error loading the model.
     """
     logger.debug(
         f"Running model in {'training' if model.training else 'generation'} mode"
@@ -115,8 +104,9 @@ def run_model(
         try:
             model.load_state_dict(torch.load(model.ckpt_path))
             logger.info("Checkpoint loaded successfully")
-        except Exception as e:
+        except UnpicklingError as e:
             logger.error(f"Error loading model: {e}")
+            raise
     else:
         logger.debug("No checkpoint found, starting with a new model")
 
@@ -125,7 +115,7 @@ def run_model(
         optimize_and_train(model, data)
     else:
         logger.info("Starting text generation")
-        generated_text = model.generate(stoi, itos)
+        generated_text = model.generate()
         logger.info(generated_text)
 
 

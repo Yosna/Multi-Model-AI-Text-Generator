@@ -12,11 +12,22 @@ from training import train, validate_data
 
 def get_test_config():
     return {
+        "vocab": {
+            "vocab_size": 100,
+            "stoi": {str(i): i for i in range(100)},
+            "itos": {i: str(i) for i in range(100)},
+        },
+        "generator_options": {
+            "generator": "random",
+            "context_length": 128,
+            "sampler": "multinomial",
+            "temperature": 1.0,
+        },
         "model_options": {
             "save_model": True,
             "token_level": "char",
-            "auto_tuning": False,
-            "save_tuning": False,
+            "patience": 10,
+            "max_checkpoints": 1,
         },
         "models": {
             "mock": {
@@ -31,7 +42,7 @@ def get_test_config():
                 "hparams": {
                     "batch_size": 2,
                     "block_size": 4,
-                    "lr": 0.0015,
+                    "lr": 0.001,
                 },
             }
         },
@@ -47,29 +58,22 @@ def get_test_config():
 
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
-        mock_config = get_test_config()["models"]["mock"]
-        model_options = get_test_config()["model_options"]
-        super().__init__(
-            model_name="mock",
-            config=mock_config,
-            cfg_path=os.path.join(base_dir, "config.json"),
-            vocab_size=10,
-            model_options=model_options,
-        )
-        self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
+        config = get_test_config()
+        config = {**config["models"]["mock"], "vocab": config["vocab"]}
+        cfg_path = os.path.join(base_dir, "config.json")
+        super().__init__(model_name="mock", config=config, cfg_path=cfg_path)
+        self.dir_path = os.path.join(base_dir, "checkpoints", "mock")
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
-        self.meta_path = os.path.join(self.ckpt_dir, "metadata.json")
-
-        for key, value in mock_config.get("hparams", {}).items():
-            setattr(self, key, value)
-
+        self.meta_path = os.path.join(self.dir_path, "meta.json")
         self.device = torch.device("cpu")
         self.embedding = nn.Embedding(100, 100)
 
     def forward(self, idx):
-        logits = self.embedding(idx)
-        return logits
+        return self.embedding(idx)
+
+    def generate(self):
+        return "test"
 
     def train_step(self, *_, **__):
         return torch.tensor(1)
@@ -112,7 +116,6 @@ def test_validate_data(tmp_path):
         wait=0,
         val_losses=[],
     )
-    print(model.save_model)
     assert overfit == False
     assert best_loss > 0
     assert wait == 0

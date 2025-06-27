@@ -1,12 +1,11 @@
 """GRU-based language model implementation for sequence modeling."""
 
-from typing import Any
+from typing import Any, cast
 
 import torch
 import torch.nn as nn
 
 from models.base_model import BaseLanguageModel
-from models.components.generators import Generators
 
 
 class GRULanguageModel(BaseLanguageModel):
@@ -44,20 +43,12 @@ class GRULanguageModel(BaseLanguageModel):
     hidden_size: int
     num_layers: int
 
-    def __init__(
-        self,
-        config: dict[str, Any],
-        cfg_path: str,
-        vocab_size: int,
-        model_options: dict[str, Any],
-    ) -> None:
+    def __init__(self, config: dict[str, Any], cfg_path: str) -> None:
         """Initialize the GRU model and its parameters.
 
         Args:
             config (dict): Configuration dictionary for the model.
             cfg_path (str): Path to the config file.
-            vocab_size (int): Number of unique tokens in the vocabulary.
-            model_options (dict[str, Any]): Model options.
 
         Raises:
             ValueError: If vocab_size is not set for the model.
@@ -65,17 +56,10 @@ class GRULanguageModel(BaseLanguageModel):
         Notes:
             config["hparams"] keys are set as attributes on the model instance.
         """
-        super().__init__(
-            model_name="gru",
-            config=config,
-            cfg_path=cfg_path,
-            vocab_size=vocab_size,
-            model_options=model_options,
-        )
+        name = "gru"
+        super().__init__(model_name=name, config=config, cfg_path=cfg_path)
 
-        # Set all hparams config keys as attributes
-        for key, value in config.get("hparams", {}).items():
-            setattr(self, key, value)
+        vocab_size = cast(int, self.vocab_size)
 
         # Initialize the hidden state
         self.hidden = None
@@ -94,7 +78,7 @@ class GRULanguageModel(BaseLanguageModel):
             raise ValueError("Vocab size is not set for GRU model")
 
         # Final layer projects GRU output back to vocabulary size
-        self.fc = nn.Linear(self.hidden_size, self.vocab_size)
+        self.fc = nn.Linear(self.hidden_size, vocab_size)
 
     def __repr__(self) -> str:
         """Displays a string representation of the model.
@@ -131,21 +115,6 @@ class GRULanguageModel(BaseLanguageModel):
         logits = self.fc(out)
 
         return logits
-
-    @torch.no_grad()
-    def generate(self, stoi: dict[str, int], itos: dict[int, str]) -> str:
-        """Generate new text from a starting index.
-
-        Args:
-            stoi (dict[str, int]): Mapping from characters to token indices.
-            itos (dict[int, str]): Mapping from token indices to tokens.
-
-        Returns:
-            str: The generated text.
-        """
-        generator = Generators.Text.Random(stoi, itos, self.sampler)
-        output = generator.output(self)
-        return output
 
     def train_step(self, *args, **kwargs) -> float:
         """Reset hidden state at the start of each training step.

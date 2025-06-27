@@ -115,18 +115,12 @@ def get_batch(
     y = torch.stack([data[i + 1 : i + block_size + 1] for i in ix])
 
     result = x.to(device or "cpu"), y.to(device or "cpu")
-    logger.debug(f"Generated batch shapes: x={result[0].shape}, y={result[1].shape}")
+    logger.debug(f"Generated batch shapes: x={x.shape}, y={y.shape}")
 
     return result
 
 
-def get_model(
-    model_name: str,
-    config: dict[str, Any],
-    cfg_path: str,
-    vocab_size: int,
-    model_options: dict[str, Any] = {},
-) -> Model.BaseLM:
+def get_model(model_name: str, config: dict[str, Any], cfg_path: str) -> Model.BaseLM:
     """Create and return a language model based on the specified model type.
 
     Args:
@@ -134,8 +128,6 @@ def get_model(
             ("bigram", "lstm", "gru", "transformer", "distilgpt2")
         config (dict[str, Any]): Configuration dictionary for all models.
         cfg_path (str): Path to the config file.
-        vocab_size (int): Vocabulary size (not used for transformer).
-        model_options (dict[str, Any]): Model options.
 
     Returns:
         Model.BaseLM: Instantiated language model.
@@ -143,23 +135,25 @@ def get_model(
     Raises:
         ValueError: If model_name is not recognized.
     """
+    vocab_size = config.get("vocab", {}).get("vocab_size", 0)
     logger.info(f"Creating {model_name} model with vocab_size={vocab_size}")
     logger.debug(f"Model config keys: {list(config.keys())}")
 
+    try:
+        model_config = {**config[model_name], "vocab": config["vocab"]}
+    except KeyError:
+        raise ValueError(f"Model config not found for {model_name}")
+
     if model_name == "bigram":
-        model = Model.BigramLM(config[model_name], cfg_path, vocab_size, model_options)
+        model = Model.BigramLM(model_config, cfg_path)
     elif model_name == "lstm":
-        model = Model.LSTMLM(config[model_name], cfg_path, vocab_size, model_options)
+        model = Model.LSTMLM(model_config, cfg_path)
     elif model_name == "gru":
-        model = Model.GRULM(config[model_name], cfg_path, vocab_size, model_options)
+        model = Model.GRULM(model_config, cfg_path)
     elif model_name == "transformer":
-        model = Model.TransformerLM(
-            config[model_name], cfg_path, vocab_size, model_options
-        )
+        model = Model.TransformerLM(model_config, cfg_path)
     elif model_name == "distilgpt2":
-        model = Model.DistilGPT2LM(config[model_name], cfg_path)
-    else:
-        raise ValueError(f"Unknown model type: {model_name}")
+        model = Model.DistilGPT2LM(model_config, cfg_path)
 
     model.to(model.device)
     logger.info(f"Model created and moved to device: {model.device}")

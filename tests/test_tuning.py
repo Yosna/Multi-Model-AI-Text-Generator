@@ -12,11 +12,22 @@ from tuning import create_pruner, make_objective, optimize_and_train
 
 def get_test_config():
     return {
-        "model_options": {
+        "vocab": {
+            "vocab_size": 100,
+            "stoi": {str(i): i for i in range(100)},
+            "itos": {i: str(i) for i in range(100)},
+        },
+        "generator_options": {
+            "generator": "random",
+            "context_length": 128,
             "sampler": "multinomial",
-            "save_model": False,
-            "token_level": "char",
             "temperature": 1.0,
+        },
+        "model_options": {
+            "save_model": True,
+            "token_level": "char",
+            "patience": 10,
+            "max_checkpoints": 1,
         },
         "models": {
             "bigram": {
@@ -31,8 +42,8 @@ def get_test_config():
                 "hparams": {
                     "batch_size": 2,
                     "block_size": 4,
-                    "lr": 0.0015,
-                    "num_layers": 2,
+                    "lr": 0.001,
+                    "num_layers": 1,
                 },
             }
         },
@@ -60,18 +71,8 @@ def get_test_config():
             "step_divisor": 10,
         },
         "tuning_ranges": {
-            "batch_size": {
-                "type": "int",
-                "min": 4,
-                "max": 12,
-                "step": 1,
-            },
-            "block_size": {
-                "type": "int",
-                "min": 8,
-                "max": 24,
-                "step": 1,
-            },
+            "batch_size": {"type": "int", "min": 4, "max": 12, "step": 1},
+            "block_size": {"type": "int", "min": 8, "max": 24, "step": 1},
             "lr": {"type": "float", "min": 0.001, "max": 0.002, "log": False},
             "num_layers": {"type": "categorical", "values": [1, 2]},
         },
@@ -88,26 +89,21 @@ def get_test_config():
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
         config = get_test_config()
-        bigram_config = config["models"]["bigram"]
-        super().__init__(
-            model_name="bigram",
-            config=bigram_config,
-            cfg_path=os.path.join(base_dir, "config.json"),
-            vocab_size=100,
-            model_options=config["model_options"],
-        )
-
-        for key, value in bigram_config.get("hparams", {}).items():
-            setattr(self, key, value)
-
+        config = {**config["models"]["bigram"], "vocab": config["vocab"]}
+        cfg_path = os.path.join(base_dir, "config.json")
+        super().__init__(model_name="bigram", config=config, cfg_path=cfg_path)
+        self.dir_path = os.path.join(base_dir, "checkpoints", "bigram")
+        self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
+        self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
+        self.meta_path = os.path.join(self.dir_path, "meta.json")
         self.device = torch.device("cpu")
         self.embedding = nn.Embedding(100, 100)
 
     def forward(self, idx):
         return self.embedding(idx)
 
-    def train_step(self, *_, **__):
-        return torch.tensor(1)
+    def generate(self):
+        return "test"
 
 
 def build_file(tmp_path, file_name, content):
@@ -141,10 +137,10 @@ def test_make_objective_error(tmp_path):
     model = MockModel(str(tmp_path))
     data = torch.tensor([i for i in range(100)])
     with pytest.raises(ValueError):
-        model.vocab_size = 0
+        setattr(model, "vocab_size", 0)
         make_objective(model, data)
     with pytest.raises(ValueError):
-        model.vocab_size = None
+        setattr(model, "vocab_size", None)
         make_objective(model, data)
 
 

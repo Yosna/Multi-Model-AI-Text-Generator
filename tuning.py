@@ -103,14 +103,12 @@ def make_objective(model: Model.BaseLM, data: torch.Tensor):
 
     config = load_config(model.cfg_path)
     models = config.get("models", {})
-    model_config = models.get(model.name, {})
-    model_options = model_config.get("model_options", {})
+    hparams = models.get(model.name, {}).get("hparams", {})
     tuning_options = config.get("tuning_options", {})
     tune = config.get("tuning_ranges", {})
-    model = get_model(
-        model.name, models, model.cfg_path, model.vocab_size, model_options
-    )
-    hparams = model_config.get("hparams", {})
+    vocab = {"vocab_size": model.vocab_size, "stoi": model.stoi, "itos": model.itos}
+    model_config = {**models, "vocab": vocab}
+    model = get_model(model.name, model_config, model.cfg_path)
     step_divisor = tuning_options.get("step_divisor", 10)
 
     def objective(trial: optuna.Trial):

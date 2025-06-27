@@ -44,8 +44,9 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Optuna Dashboard for visualizing hyperparameter optimization studies
 - Adam optimizer with early stopping
 - Automatic checkpoint rotation and resumption with metadata tracking
-- Multinomial and argmax sampling for text generation (configurable via `sampler` in `model_options`)
-- Temperature scaling for controllable randomness in generation (configurable via `temperature` in `model_options`)
+- Text generation strategies: Random generation and prompt-based generation (configurable via `generator` in `generator_options`)
+- Multinomial and argmax sampling for text generation (configurable via `sampler` in `generator_options`)
+- Temperature scaling for controllable randomness in generation (configurable via `temperature` in `generator_options`)
 - Comprehensive CLI interface with model selection, runtime, hyperparameter, model options, tuning, and visualization configuration
 - Full unit test coverage (100%) for all modules
 - Tests include generation and training for all models, tuning, visualization, CLI behavior, argument parsing helpers, and profiling
@@ -55,7 +56,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Support for local files, Hugging Face datasets, and built-in library datasets
 - Built-in profiling for performance analysis
 - Interactive GUI for editing `config.json`
-- **Statistics**: 200 unit tests, 100% coverage, 1011 stmts / 0 miss
+- **Statistics**: 205 unit tests, 100% coverage, 1050 stmts / 0 miss
 
 ## Model Architectures
 
@@ -134,11 +135,18 @@ All behavior is driven by a single `config.json` file. You can edit this file ma
     }
   },
 
-  "model_options": {
+  "generator_options": {
+    "generator": "random",
+    "context_length": 128,
     "sampler": "multinomial",
-    "save_model": true,
-    "token_level": "word",
     "temperature": 1.0
+  },
+
+  "model_options": {
+    "save_model": true,
+    "token_level": "char",
+    "patience": 10,
+    "max_checkpoints": 10
   },
 
   "models": {
@@ -147,9 +155,7 @@ All behavior is driven by a single `config.json` file. You can edit this file ma
         "training": true,
         "steps": 10000,
         "interval": 100,
-        "patience": 10,
-        "max_new_tokens": 128,
-        "max_checkpoints": 10
+        "max_new_tokens": 128
       },
       "hparams": {
         "batch_size": 16,
@@ -162,9 +168,7 @@ All behavior is driven by a single `config.json` file. You can edit this file ma
         "training": true,
         "steps": 50000,
         "interval": 500,
-        "patience": 10,
-        "max_new_tokens": 256,
-        "max_checkpoints": 10
+        "max_new_tokens": 256
       },
       "hparams": {
         "batch_size": 32,
@@ -180,9 +184,7 @@ All behavior is driven by a single `config.json` file. You can edit this file ma
         "training": true,
         "steps": 50000,
         "interval": 500,
-        "patience": 10,
-        "max_new_tokens": 256,
-        "max_checkpoints": 10
+        "max_new_tokens": 256
       },
       "hparams": {
         "batch_size": 32,
@@ -198,9 +200,7 @@ All behavior is driven by a single `config.json` file. You can edit this file ma
         "training": true,
         "steps": 100000,
         "interval": 1000,
-        "patience": 10,
-        "max_new_tokens": 256,
-        "max_checkpoints": 10
+        "max_new_tokens": 256
       },
       "hparams": {
         "batch_size": 32,
@@ -318,7 +318,8 @@ All behavior is driven by a single `config.json` file. You can edit this file ma
 You can configure:
 
 - **Datasets** (`datasets`): Source and location to pull from
-- **Model Options** (`model_options`): Model saving, tokenization level, temperature scaling for generation, and sampling strategy (`sampler`)
+- **Generator Options** (`generator_options`): Text generation and sampling strategies, along with relevant options.
+- **Model Options** (`model_options`): Model saving, tokenization level, early stopping patience, and checkpoint management
 - **Runtime** (`runtime`): Training and generation settings for each model
 - **Hyperparameters** (`hparams`): Model-specific architecture and optimization parameters
 - **Pruners** (`pruners`): Configuration for Optuna pruners
@@ -381,7 +382,8 @@ A built-in profiling tool is included to help you analyze performance bottleneck
 
 The project provides a flexible CLI for controlling model options, runtime and hyperparameters, tuning options, and visualization:
 
-- **Model Options** (`--sampler`, `--save-model`, `--token-level`, ...)
+- **Generator Options** (`--generator`, `--context-length`, `--sampler`, ...)
+- **Model Options** (`--save-model`, `--token-level`, `patience`...)
 - **Runtime** (`--training`, `--steps`, `--interval`, ...)
 - **Hyperparameters** (`--batch-size`, `--block-size`, `--lr`, ...)
 - **Tuning Options** (`--auto-tuning`, `--save-tuning`, `--save-study`, ...)
@@ -401,9 +403,7 @@ python main.py --help
 - `--training`: Toggle training mode \*\*
 - `--steps`: Number of training steps \*\*
 - `--interval`: Validation interval during training \*\*
-- `--patience`: Early stopping patience \*\*
 - `--max-new-tokens`: Maximum tokens to generate \*
-- `--max-checkpoints`: Maximum checkpoints to keep \*\*
 - `--batch-size`: Override batch size for training \*\*
 - `--block-size`: Override context window size \*
 - `--lr`: Override learning rate \*\*
@@ -413,10 +413,14 @@ python main.py --help
 - `--max-seq-len`: Override maximum sequence length (transformer)
 - `--num-heads`: Override number of attention heads (transformer)
 - `--ff-dim`: Override feedforward dimension (transformer)
-- `--sampler`: Override sampling strategy for generation (model_options)
+- `--generator`: Override text generation strategy (generator_options)
+- `--context-length`: Override context length for prompt generation (generator_options)
+- `--sampler`: Override sampling strategy for generation (generator_options)
+- `--temperature`: Override temperature for generation (generator_options)
 - `--save-model`: Override model saving (model_options)
 - `--token-level`: Override tokenization level (model_options)
-- `--temperature`: Override temperature for generation (model_options)
+- `--patience`: Early stopping patience (model_options) \*\*
+- `--max-checkpoints`: Maximum checkpoints to keep (model_options) \*\*
 - `--auto-tuning`: Enable/disable hyperparameter tuning (tuning_options)
 - `--save-tuning`: Enable/disable saving tuned hyperparameters (tuning_options)
 - `--save-study`: Enable/disable saving Optuna study (tuning_options)
@@ -458,9 +462,14 @@ Then run the same command to generate text:
 python main.py --model transformer
 ```
 
-The output will begin with a randomly selected seed character or word (depending on `token_level`) and continue for the configured number of tokens.
+The project supports two text generation strategies:
+
+1. **Random Generation** (`"generator": "random"`): Starts with a randomly selected seed character/word and generates text from there
+2. **Prompt-Based Generation** (`"generator": "prompt"`): Uses a user-provided prompt and generates text continuing from that prompt
 
 You can control the randomness of generation using the `temperature` argument in `config.json`. Lower values make output more deterministic; higher values make it more random.
+
+For prompt-based generation, you can also configure the `context_length` to control how much of the prompt history is used for generating the next token.
 
 ## Loss Visualization
 
@@ -544,7 +553,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, model/CLI behavior, and profiling.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 200 unit tests, 100% coverage, 1011 stmts / 0 miss
+- **Statistics**: 205 unit tests, 100% coverage, 1050 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest

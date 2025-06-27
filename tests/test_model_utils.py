@@ -11,6 +11,17 @@ from utils.model_utils import build_vocab, create_mappings, get_batch, get_model
 
 def get_test_config():
     return {
+        "vocab": {
+            "vocab_size": 10,
+            "stoi": {str(i): i for i in range(10)},
+            "itos": {i: str(i) for i in range(10)},
+        },
+        "generator_options": {
+            "generator": "random",
+            "context_length": 128,
+            "sampler": "multinomial",
+            "temperature": 1.0,
+        },
         "model_options": {
             "save_model": True,
             "token_level": "char",
@@ -23,7 +34,6 @@ def get_test_config():
             "gru": get_models_config(),
             "distilgpt2": get_models_config(),
         },
-        "auto_tuning": False,
         "visualization": {
             "show_plot": False,
             "smooth_loss": False,
@@ -40,9 +50,7 @@ def get_models_config():
             "training": True,
             "steps": 1,
             "interval": 1,
-            "patience": 10,
             "max_new_tokens": 10,
-            "max_checkpoints": 10,
         },
         "hparams": {
             "batch_size": 2,
@@ -63,14 +71,10 @@ def build_file(tmp_path, file_name, content):
 
 class MockModel(Model.BaseLM):
     def __init__(self, base_dir):
-        config = get_test_config()["models"]["bigram"]
+        config = get_test_config()
+        config = {**config["models"]["bigram"], "vocab": config["vocab"]}
         cfg_path = build_file(base_dir, "config.json", json.dumps(get_test_config()))
-        super().__init__(
-            model_name="bigram",
-            config=config,
-            cfg_path=cfg_path,
-            vocab_size=10,
-        )
+        super().__init__(model_name="bigram", config=config, cfg_path=cfg_path)
         self.dir_path = os.path.join(base_dir, "checkpoints", self.name)
         self.ckpt_dir = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path = os.path.join(self.ckpt_dir, "checkpoint.pt")
@@ -119,11 +123,12 @@ def test_get_batch(tmp_path):
 
 
 def test_get_model():
-    config = get_test_config()["models"]
-    bigram = get_model("bigram", config, "config.json", 10)
-    lstm = get_model("lstm", config, "config.json", 10)
-    gru = get_model("gru", config, "config.json", 10)
-    distilgpt2 = get_model("distilgpt2", config, "config.json", 10)
+    config = get_test_config()
+    model_config = {**config["models"], "vocab": config["vocab"]}
+    bigram = get_model("bigram", model_config, "config.json")
+    lstm = get_model("lstm", model_config, "config.json")
+    gru = get_model("gru", model_config, "config.json")
+    distilgpt2 = get_model("distilgpt2", model_config, "config.json")
     assert bigram.__class__.__name__ == "BigramLanguageModel"
     assert lstm.__class__.__name__ == "LSTMLanguageModel"
     assert gru.__class__.__name__ == "GRULanguageModel"
@@ -131,6 +136,7 @@ def test_get_model():
 
 
 def test_get_model_error():
-    config = get_test_config()["models"]
+    config = get_test_config()
+    model_config = {**config["models"], "vocab": config["vocab"]}
     with pytest.raises(ValueError):
-        get_model("test", config, "config.json", 10, {})
+        get_model("test", model_config, "config.json")

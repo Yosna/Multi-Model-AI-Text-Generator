@@ -45,6 +45,11 @@ class DistilGPT2LanguageModel(BaseLanguageModel):
             config=config,
             cfg_path=cfg_path,
         )
+
+        # These are unnecessary since DistilGPT2 uses its own vocabulary
+        for key in config.get("vocab", {}).keys():
+            delattr(self, key)
+
         self.tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
         self.model = AutoModelForCausalLM.from_pretrained("distilgpt2")
 

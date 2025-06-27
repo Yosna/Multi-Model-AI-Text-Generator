@@ -7,12 +7,36 @@ from models.registry import ModelRegistry as Model
 
 def get_distilgpt2_config():
     return {
-        "model_options": {},
-        "runtime": {
-            "block_size": 4,
-            "max_new_tokens": 10,
+        "vocab": {
+            "vocab_size": 50257,
+            "stoi": {str(i): i for i in range(100)},
+            "itos": {i: str(i) for i in range(100)},
         },
-        "model": {},
+        "generator_options": {
+            "generator": "random",
+            "context_length": 128,
+            "sampler": "multinomial",
+            "temperature": 1.0,
+        },
+        "model_options": {
+            "save_model": True,
+            "token_level": "char",
+            "patience": 10,
+            "max_checkpoints": 1,
+        },
+        "runtime": {
+            "training": True,
+            "steps": 1,
+            "interval": 1,
+            "patience": 10,
+            "max_new_tokens": 10,
+            "max_checkpoints": 1,
+        },
+        "hparams": {
+            "batch_size": 2,
+            "block_size": 4,
+            "lr": 0.0015,
+        },
     }
 
 

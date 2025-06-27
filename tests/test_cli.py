@@ -10,6 +10,7 @@ from cli import add_arg, parse_args, parse_config, set_arg_bool
 
 def get_test_config():
     return {
+        "generator_options": {"generator_options_passed": False},
         "model_options": {"model_options_passed": False},
         "models": {
             "mock": {
@@ -25,6 +26,7 @@ def get_test_config():
 def get_test_args():
     args = argparse.Namespace()
     args.model = "mock"
+    args.generator_options_passed = "true"
     args.model_options_passed = "true"
     args.runtime_passed = "true"
     args.hparams_passed = "true"
@@ -51,6 +53,7 @@ def test_parse_config(tmp_path):
     parse_config(args, cfg_path)
     with open(cfg_path, "r", encoding="utf-8") as f:
         parsed_config = json.load(f)
+    assert parsed_config["generator_options"]["generator_options_passed"]
     assert parsed_config["model_options"]["model_options_passed"]
     assert parsed_config["models"]["mock"]["runtime"]["runtime_passed"]
     assert parsed_config["models"]["mock"]["hparams"]["hparams_passed"]
@@ -98,20 +101,36 @@ def test_parse_args_invalid(invalid):
             parse_args()
 
 
-def test_parse_args_model_options():
+def test_parse_args_generator_options():
     cli_args = [
         "main.py",
+        *["--generator", "random"],
+        *["--context-length", "10"],
         *["--sampler", "multinomial"],
-        *["--save-model", "true"],
-        *["--token-level", "char"],
         *["--temperature", "1.0"],
     ]
     with patch.object(sys, "argv", cli_args):
         args = parse_args()
+        assert args.generator == "random"
+        assert args.context_length == 10
         assert args.sampler == "multinomial"
+        assert args.temperature == 1.0
+
+
+def test_parse_args_model_options():
+    cli_args = [
+        "main.py",
+        *["--save-model", "true"],
+        *["--token-level", "char"],
+        *["--patience", "10"],
+        *["--max-checkpoints", "10"],
+    ]
+    with patch.object(sys, "argv", cli_args):
+        args = parse_args()
         assert args.save_model
         assert args.token_level == "char"
-        assert args.temperature == 1.0
+        assert args.patience == 10
+        assert args.max_checkpoints == 10
 
 
 def test_parse_args_runtime():
@@ -120,18 +139,14 @@ def test_parse_args_runtime():
         *["--training", "true"],
         *["--steps", "100"],
         *["--interval", "10"],
-        *["--patience", "10"],
         *["--max-new-tokens", "10"],
-        *["--max-checkpoints", "10"],
     ]
     with patch.object(sys, "argv", cli_args):
         args = parse_args()
         assert args.training
         assert args.steps == 100
         assert args.interval == 10
-        assert args.patience == 10
         assert args.max_new_tokens == 10
-        assert args.max_checkpoints == 10
 
 
 def test_parse_args_hparams():

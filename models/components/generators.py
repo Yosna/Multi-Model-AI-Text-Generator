@@ -76,7 +76,55 @@ class ArgmaxSampler:
         return next_token
 
 
-class RandomTextGenerator:
+class TextGenerator:
+    """Base class for text generators."""
+
+    def __init__(
+        self, stoi: dict[str, int], itos: dict[int, str], sampler: Sampler | None = None
+    ) -> None:
+        """Initialize the text generator.
+
+        Args:
+            stoi (dict[str, int]): The mapping from characters to token indices.
+            itos (dict[int, str]): The mapping from token indices to characters.
+            sampler (Sampler | None): The token sampling strategy to use.
+        """
+        self.stoi = stoi
+        self.itos = itos
+        self.sampler = sampler or MultinomialSampler()
+
+    def tokens(self, *_) -> torch.Tensor:
+        """Generate tokens from the model.
+
+        Args:
+            *_: Unused arguments
+
+        Raises:
+            NotImplementedError: If the method is not implemented by a subclass.
+        """
+        raise NotImplementedError("Method implemented in subclasses")
+
+    def output(self, model) -> str:
+        """Generate text from the model using the prompt.
+
+        Args:
+            model: The language model instance to use for generation.
+
+        Returns:
+            str: The generated text.
+        """
+        tokens = self.tokens(model)
+        text = decode_data(tokens, self.itos, model.token_level)
+
+        logger.info(f"Generated text length: {len(text)} characters")
+        logger.debug(
+            f"Generated text preview: {text[:100]}{'...' if len(text) > 100 else ''}"
+        )
+
+        return text
+
+
+class RandomTextGenerator(TextGenerator):
     """Generates text from a model using a specified sampling strategy.
 
     This generator uses a provided sampler to select the next token at each step.
@@ -97,10 +145,8 @@ class RandomTextGenerator:
             itos (dict[int, str]): The mapping from token indices to characters.
             sampler (Sampler | None): The token sampling strategy to use.
         """
+        super().__init__(stoi, itos, sampler)
         self.start_idx = stoi[random.choice(list(stoi.keys()))]
-        self.sampler = sampler or MultinomialSampler()
-        self.stoi = stoi
-        self.itos = itos
 
         logger.debug(
             f"Initialized RandomTextGenerator with start_idx: {self.start_idx}"
@@ -116,7 +162,8 @@ class RandomTextGenerator:
         Returns:
             torch.Tensor: The generated sequence of token indices.
         """
-        logger.info(f"Starting text generation for {model.max_new_tokens} tokens")
+        max_tokens = model.max_new_tokens
+        logger.info(f"Starting random text generation for {max_tokens} tokens")
 
         model.eval()
         tokens = torch.tensor([self.start_idx], dtype=torch.long, device=model.device)
@@ -134,24 +181,65 @@ class RandomTextGenerator:
         logger.info(f"Text generation completed: {len(tokens)} tokens")
         return tokens
 
-    def output(self, model) -> str:
-        """Generate text from the model.
+
+class PromptTextGenerator(TextGenerator):
+    """Generates text from a model using a prompt.
+
+    This generator uses a provided prompt and context length to generate text.
+    The starting index is chosen randomly from the vocabulary.
+
+    Attributes:
+        context_length (int): The context length to use for generation.
+    """
+
+    def __init__(
+        self,
+        context_length: int,
+        stoi: dict[str, int],
+        itos: dict[int, str],
+        sampler: Sampler | None = None,
+    ) -> None:
+        """Initialize the prompt text generator.
+
+        Args:
+            context_length (int): The context length to use for generation.
+            stoi (dict[str, int]): The mapping from characters to token indices.
+            itos (dict[int, str]): The mapping from token indices to characters.
+            sampler (Sampler | None): The token sampling strategy to use.
+        """
+        super().__init__(stoi, itos, sampler)
+        self.context_length = context_length
+
+    def tokens(self, model) -> torch.Tensor:
+        """Generate tokens from the model using the prompt.
 
         Args:
             model: The language model instance to use for generation.
 
         Returns:
-            str: The generated text.
+            torch.Tensor: The generated sequence of token indices.
         """
-        tokens = self.tokens(model)
-        text = decode_data(tokens, self.itos, model.token_level)
+        max_tokens = model.max_new_tokens
+        logger.info(f"Starting prompt text generation for {max_tokens} tokens")
 
-        logger.info(f"Generated text length: {len(text)} characters")
-        logger.debug(
-            f"Generated text preview: {text[:100]}{'...' if len(text) > 100 else ''}"
-        )
+        model.eval()
+        prompt = f"{input('Enter a prompt: ')} "
+        prompt_tokens = torch.tensor([self.stoi[c] for c in prompt], dtype=torch.long)
+        tokens = prompt_tokens.clone().to(model.device)
+        idx = tokens.unsqueeze(0)
 
-        return text
+        for i in range(max_tokens):
+            idx_max = idx[:, -self.context_length :]
+            logits = model(idx_max)
+            next_idx = self.sampler.get_next_token(logits)
+            idx = torch.cat((idx, next_idx), dim=1)
+            tokens = torch.cat((tokens, next_idx.flatten()), dim=0)
+
+            if (i + 1) % 100 == 0:
+                logger.debug(f"Generated {i + 1}/{max_tokens} tokens")
+
+        logger.info(f"Text generation completed: {len(tokens)} tokens")
+        return tokens
 
 
 class Generators:
@@ -161,6 +249,7 @@ class Generators:
         """Registry for text classes."""
 
         Random = RandomTextGenerator
+        Prompt = PromptTextGenerator
 
 
 class Samplers:

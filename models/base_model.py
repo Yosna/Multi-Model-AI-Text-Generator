@@ -5,13 +5,13 @@ import logging
 import os
 import shutil
 import time
-from typing import Any
+from typing import Any, cast
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.components.generators import Samplers, Sampler
+from models.components.generators import Generators, Sampler, Samplers
 from utils.io_utils import get_config
 
 logger = logging.getLogger(__name__)
@@ -52,12 +52,7 @@ class BaseLanguageModel(nn.Module):
     max_checkpoints: int
 
     def __init__(
-        self,
-        model_name: str,
-        config: dict[str, Any],
-        cfg_path: str = "config.json",
-        vocab_size: int | None = None,
-        model_options: dict[str, Any] = {},
+        self, model_name: str, config: dict[str, Any], cfg_path: str = "config.json"
     ) -> None:
         """Initialize the base language model.
 
@@ -65,40 +60,47 @@ class BaseLanguageModel(nn.Module):
             model_name (str): Name of the model, used for checkpoint paths.
             config (dict): Configuration dictionary for the model.
             cfg_path (str): Path to the config file.
-            vocab_size (int | None): Number of unique tokens.
-            model_options (dict[str, Any]): Model options.
 
         Notes:
             config["runtime"] keys are set as attributes on the model instance.
         """
         super().__init__()
+        vocab = config.get("vocab", {})
+        generator_options = get_config(cfg_path, "generator_options")
+        model_options = get_config(cfg_path, "model_options")
+        runtime = config.get("runtime", {})
+        hparams = config.get("hparams", {})
+
+        vocab_size = vocab.get("vocab_size", None)
         logger.debug(f"Initializing {model_name} model with vocab_size={vocab_size}")
 
         self.name: str = model_name
         self.cfg_path: str = cfg_path
-        self.vocab_size: int | None = vocab_size
         self.dir_path: str = os.path.join("checkpoints", model_name)
         self.plot_dir: str = os.path.join("plots", model_name)
         self.ckpt_dir: str = os.path.join(self.dir_path, "checkpoint_1")
         self.ckpt_path: str = os.path.join(self.ckpt_dir, "checkpoint.pt")
         self.meta_path: str = os.path.join(self.ckpt_dir, "metadata.json")
 
-        # Set model options as attributes
-        self.temperature = model_options.get("temperature", 1.0)
-        self.token_level = model_options.get("token_level", "char")
-        sampler = model_options.get("sampler", "multinomial")
+        configs = [vocab, generator_options, model_options, runtime, hparams]
+        ignored_keys = ["generator", "sampler"]
+        # Set all config keys as attributes
+        for config in configs:
+            for key, value in config.items():
+                if key not in ignored_keys:
+                    setattr(self, key, value)
+                    logger.debug(f"Set attribute: {key} = {value}")
+
+        # Set generator options as attributes
+        sampler = generator_options.get("sampler", "multinomial")
         self.sampler = self._get_sampler(sampler)
-        self.save_model = model_options.get("save_model", False)
+        generator = generator_options.get("generator", "random")
+        self.generator = self._get_generator(generator)
 
         logger.debug(
             f"Model options: sampler={self.sampler}, save_model={self.save_model}, "
             f"temperature={self.temperature}, token_level={self.token_level}"
         )
-
-        # Set all runtime config keys as attributes
-        for key, value in config.get("runtime", {}).items():
-            setattr(self, key, value)
-            logger.debug(f"Set runtime attribute: {key} = {value}")
 
         # Automatically use GPU if available, otherwise CPU
         self.device: torch.device = (
@@ -119,12 +121,37 @@ class BaseLanguageModel(nn.Module):
             ValueError: If the sampler is not found.
         """
         if name.lower() == "multinomial":
-            sampler = Samplers.Multinomial(temperature=self.temperature)
+            temperature = cast(float, self.temperature)
+            sampler = Samplers.Multinomial(temperature=temperature)
         elif name.lower() == "argmax":
             sampler = Samplers.Argmax()
         else:
             raise ValueError(f"Sampler {name} not found")
         return sampler
+
+    def _get_generator(self, name: str):
+        """Get the generator class based on the name.
+
+        Args:
+            name (str): Name of the generator.
+
+        Returns:
+            Generator: The generator class.
+
+        Raises:
+            ValueError: If the generator is not found.
+        """
+        stoi = cast(dict[str, int], self.stoi)
+        itos = cast(dict[int, str], self.itos)
+        context_length = cast(int, self.context_length)
+
+        if name.lower() == "random":
+            generator = Generators.Text.Random(stoi, itos, self.sampler)
+        elif name.lower() == "prompt":
+            generator = Generators.Text.Prompt(context_length, stoi, itos, self.sampler)
+        else:
+            raise ValueError(f"Generator {name} not found")
+        return generator
 
     def train_step(
         self, xb: torch.Tensor, yb: torch.Tensor, optimizer: torch.optim.Optimizer
@@ -147,10 +174,7 @@ class BaseLanguageModel(nn.Module):
         return loss.item()
 
     def compute_loss(
-        self,
-        logits: torch.Tensor,
-        idx: torch.Tensor,
-        targets: torch.Tensor,
+        self, logits: torch.Tensor, idx: torch.Tensor, targets: torch.Tensor
     ) -> torch.Tensor:
         """Compute the cross entropy loss between model predictions and targets.
 
@@ -253,19 +277,14 @@ class BaseLanguageModel(nn.Module):
 
         logger.info(f"Saved step {step} checkpoint to {self.ckpt_path}")
 
-    def generate(self, *_, **__):
-        """Generate text from the model.
+    @torch.no_grad()
+    def generate(self) -> str:
+        """Generate new text by sampling from the model's predictions.
 
-        This method must be implemented by subclasses.
-
-        Args:
-            *_: Unused arguments
-            **__: Unused keyword arguments
-
-        Raises:
-            NotImplementedError: If the method is not implemented by a subclass.
+        Returns:
+            str: The decoded string generated by the model.
         """
-        raise NotImplementedError("Method implemented in subclasses")
+        return self.generator.output(self)
 
     def run(self, *_, **__):
         """Run the model on input data.

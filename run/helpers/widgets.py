@@ -100,11 +100,12 @@ def _set_int_input(
         return False if not parents else parents[parent or -1] == key
 
     options = {
-        "max_new_tokens": {"data": ["pow", [11]], "when": True},
+        "context_length": {"data": ["pow", [4, 10]], "when": True},
+        "patience": {"data": ["mult", [1, 10]], "when": when("model_options")},
         "max_checkpoints": {"data": ["mult", [1, 10, 100]], "when": True},
+        "max_new_tokens": {"data": ["pow", [11]], "when": True},
         "steps": {"data": ["mult", [1000, 10000]], "when": when("runtime")},
         "interval": {"data": ["mult", [100, 1000]], "when": when("runtime")},
-        "patience": {"data": ["mult", [1, 10]], "when": when("runtime")},
         "batch_size": {"data": ["pow", [1, 9]], "when": True},
         "block_size": {"data": ["pow", [2, 10]], "when": True},
         "n_trials": {"data": ["mult", [1, 10, 100]], "when": True},
@@ -233,10 +234,12 @@ def _set_str_input(
     sources = ["local", "library", "huggingface"]
     libraries = ["news", "squad", "science", "movies", "yelp"]
     libraries.extend(["tiny_stories", "stackoverflow", "wikipedia"])
+    generator = "generator_options"
     options = {
         "source": {"data": sources, "when": when("datasets")},
         "data_name": {"data": libraries, "when": when("library")},
-        "sampler": {"data": ["multinomial", "argmax"], "when": when("model_options")},
+        "generator": {"data": ["random", "prompt"], "when": when(generator)},
+        "sampler": {"data": ["multinomial", "argmax"], "when": when(generator)},
         "token_level": {"data": ["char", "word"], "when": True},
         "pruner": {"data": ["median", "halving", "hyperband"], "when": True},
     }
