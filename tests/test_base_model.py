@@ -1,5 +1,6 @@
 import json
 import os
+from unittest.mock import patch
 from typing import Any
 
 import pytest
@@ -171,9 +172,13 @@ def test_save_checkpoint(tmp_path):
     assert metadata["config"] == {"test": True}
 
 
-def test_base_model_generate(tmp_path):
-    model = get_base_model(tmp_path)
-    generated = model.generate()
+@pytest.mark.parametrize("generator", ["random", "prompt"])
+def test_base_model_generators(tmp_path, generator):
+    config = get_test_config()
+    config["generator_options"]["generator"] = generator
+    model = get_base_model(tmp_path, config)
+    with patch("builtins.input", return_value="0"):
+        generated = model.generate()
     assert isinstance(generated, str)
     assert all(char in [str(i) for i in range(10)] for char in generated)
     assert len(generated) == model.max_new_tokens + 1

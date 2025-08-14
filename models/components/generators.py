@@ -223,7 +223,7 @@ class PromptTextGenerator(TextGenerator):
         logger.info(f"Starting prompt text generation for {max_tokens} tokens")
 
         model.eval()
-        prompt = f"{input('Enter a prompt: ')} "
+        prompt = f"{input('Enter a prompt: ')}"
         prompt_tokens = torch.tensor([self.stoi[c] for c in prompt], dtype=torch.long)
         tokens = prompt_tokens.clone().to(model.device)
         idx = tokens.unsqueeze(0)

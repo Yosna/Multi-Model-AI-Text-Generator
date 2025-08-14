@@ -144,13 +144,13 @@ def test_prompt_text_generator_init():
 
 
 @pytest.mark.parametrize(
-    "generator, parameter, padding",
+    "generator, parameter",
     [
-        (Generators.Text.Random, [], 0),
-        (Generators.Text.Prompt, [128], 1),
+        (Generators.Text.Random, []),
+        (Generators.Text.Prompt, [128]),
     ],
 )
-def test_text_generators_tokens(tmp_path, generator, parameter, padding):
+def test_text_generators_tokens(tmp_path, generator, parameter):
     stoi, itos = get_test_mappings()
     vocab_size = max(stoi.values()) + 1
     parameters = [*parameter, stoi, itos]
@@ -159,17 +159,17 @@ def test_text_generators_tokens(tmp_path, generator, parameter, padding):
     with patch("builtins.input", return_value="0"):
         tokens = generator.tokens(model)
     assert isinstance(tokens, torch.Tensor)
-    assert len(tokens) == model.max_new_tokens + 1 + padding
+    assert len(tokens) == model.max_new_tokens + 1
 
 
 @pytest.mark.parametrize(
-    "generator, parameter, padding",
+    "generator, parameter",
     [
-        (Generators.Text.Random, [], 0),
-        (Generators.Text.Prompt, [128], 1),
+        (Generators.Text.Random, []),
+        (Generators.Text.Prompt, [128]),
     ],
 )
-def test_text_generators_output(tmp_path, generator, parameter, padding):
+def test_text_generators_output(tmp_path, generator, parameter):
     stoi, itos = get_test_mappings()
     vocab_size = max(stoi.values()) + 1
     parameters = [*parameter, stoi, itos]
@@ -178,4 +178,4 @@ def test_text_generators_output(tmp_path, generator, parameter, padding):
     with patch("builtins.input", return_value="0"):
         output = generator.output(model)
     assert isinstance(output, str)
-    assert len(output) == model.max_new_tokens + 1 + padding
+    assert len(output) == model.max_new_tokens + 1

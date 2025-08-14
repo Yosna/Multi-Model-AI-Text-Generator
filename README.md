@@ -56,7 +56,7 @@ The codebase is modular, config-driven, and supports training, checkpointing, ea
 - Support for local files, Hugging Face datasets, and built-in library datasets
 - Built-in profiling for performance analysis
 - Interactive GUI for editing `config.json`
-- **Statistics**: 205 unit tests, 100% coverage, 1050 stmts / 0 miss
+- **Statistics**: 206 unit tests, 100% coverage, 1050 stmts / 0 miss
 
 ## Model Architectures
 
@@ -551,7 +551,7 @@ You can modify the `CMD` in the Dockerfile to run other scripts or pass argument
 - The project includes comprehensive unit tests for all major modules: training, datasets, utility functions, loss visualization, tuning, model/CLI behavior, and profiling.
 - Tests are written using `pytest` with `coverage` for reporting. Both are required and included in `requirements.txt`
 - All unit tests are located in the `tests/` directory.
-- **Statistics**: 205 unit tests, 100% coverage, 1050 stmts / 0 miss
+- **Statistics**: 206 unit tests, 100% coverage, 1050 stmts / 0 miss
 - To run all tests:
   ```bash
   pytest
